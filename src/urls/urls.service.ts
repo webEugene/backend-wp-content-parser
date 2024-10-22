@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UrlDto } from './dto/url-dto';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import Sitemapper from 'sitemapper';
+// import Sitemapper from 'sitemapper';
+import * as fs from 'fs';
+import { SITEMAP_URLS_DIR } from '../common/constants';
+import { cleanHostname } from '../helpers/cleanHostname';
+
 @Injectable()
 export class UrlsService {
   constructor(private readonly httpService: HttpService) {}
@@ -10,50 +14,29 @@ export class UrlsService {
     'sitemap-index.xml',
     'sitemap.xml',
     'sitemap.php',
-    // 'sitemap.txt',
-    // 'sitemap_index.xml',
-    // 'sitemap.xml.gz',
-    // 'sitemap/',
-    // 'sitemap/sitemap.xml',
-    // 'sitemapindex.xml',
-    // 'sitemap/index.xml',
-    // 'sitemap1.xml',
+    'sitemap.txt',
+    'sitemap_index.xml',
+    'sitemap.xml.gz',
+    'sitemap/',
+    'sitemap/sitemap.xml',
+    'sitemapindex.xml',
+    'sitemap/index.xml',
+    'sitemap1.xml',
   ];
 
   async sitemapListParse(websiteUrl: UrlDto) {
     const validUrl = await this.validateUrl(websiteUrl.url);
-    // let sitemap;
-    const interval = setInterval(
-      (gen) => {
-        const { value, done } = gen.next();
-
-        if (done) {
-          clearInterval(interval);
-        } else {
-          console.log(value, done);
-          this.getSitemapUrl(`${validUrl}${value}`);
-          // if (!sitemapList?.length && sitemapList?.length === 0) {
-          // console.log(this.getSitemapUrl(`${validUrl}${value}`))
-          // sitemap = this.getSitemapUrl(`${validUrl}${value}`);
-          // }
-        }
-      },
-      2000,
-      this.sitemapVariantsList[Symbol.iterator](),
-    );
-
-    // for (let i = 0; i < this.sitemapVariantsList.length; i++) {
-    //   console.log(this.sitemapVariantsList[i])
-    //   if (sitemapList?.length && sitemapList?.length > 0) break;
-    //   sitemapList = new Sitemapper({
-    //     url: `${validUrl}${this.sitemapVariantsList[i]}`,
-    //     timeout: 15000, // 15 seconds
-    //   });
-    // }
-    // console.log(sitemap.status);
-
+    this.storeUrls(validUrl, 'test');
+    // const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
+    //
+    // if (correctSitemapUrl === null) return [];
+    // const sitemap = new Sitemapper({
+    //   url: `${correctSitemapUrl}`,
+    //   timeout: 15000, // 15 seconds
+    // });
+    //
     // try {
-    //   const { sites } = await sitemapList.fetch();
+    //   const { sites } = await sitemap.fetch();
     //   console.log(sites);
     // } catch (error) {
     //   console.log(error);
@@ -71,9 +54,62 @@ export class UrlsService {
     }
   }
 
-  async getSitemapUrl(url) {
-    const { data, status } = await lastValueFrom(this.httpService.get(url));
-    // console.log(status)
-    return status;
+  async getValidSitemapUrl(siteUrl: string) {
+    let sitemapUrl = null;
+    for await (const sitemap of this.sitemapVariantsList) {
+      const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
+
+      if (status === HttpStatus.OK) {
+        sitemapUrl = url;
+      }
+    }
+
+    return sitemapUrl;
+  }
+
+  async getSitemapUrl(url): Promise<{
+    url: string;
+    status: number;
+    error: null | string;
+  }> {
+    try {
+      const { status } = await lastValueFrom(this.httpService.get(url));
+      return {
+        url,
+        status,
+        error: null,
+      };
+    } catch (error) {
+      // Return status 0 for failed requests
+      return {
+        url,
+        status: 404,
+        error: error.message,
+      };
+    }
+  }
+
+  async storeUrls(url, urlList) {
+    const host: string = cleanHostname(url);
+    let returnFilename: string[] | string = '';
+    fs.readdir(SITEMAP_URLS_DIR, (err, files) => {
+      if (err) return new Error('Something is wrong!');
+      returnFilename = files.filter((item) =>
+        item === `${host}_sitemap_url.json` ? `${host}_sitemap_url.json` : '',
+      );
+    console.log(returnFilename, urlList)
+    });
+    // try {
+    //   await fs.writeFile(
+    //     `${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
+    //     urlList,
+    //     { encoding: 'utf8', mode: '0644', flag: 'a' },
+    //     (err) => {
+    //       if (err) throw new Error(`Error writing data: ${err}`);
+    //     },
+    //   );
+    // } catch (e) {
+    //   console.log(e.code);
+    // }
   }
 }
