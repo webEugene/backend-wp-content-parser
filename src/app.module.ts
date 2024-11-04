@@ -5,6 +5,7 @@ import { UrlsController } from './urls/urls.controller';
 import { UrlsModule } from './urls/urls.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ParserModule } from './parser/parser.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
     }),
+    ParserModule,
   ],
   controllers: [UrlsController],
 })

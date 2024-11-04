@@ -2,6 +2,8 @@ import { Body, Controller, HttpStatus, Post } from '@nestjs/common';
 import { WpDetectService } from '../wp-detect/wp-detect.service';
 import { UrlDto } from './dto/url-dto';
 import { UrlsService } from './urls.service';
+import { ClassNamesDto } from './dto/class-names.dto';
+import { SitemapDataDto } from './dto/sitemap-data.dto';
 
 @Controller('urls')
 export class UrlsController {
@@ -30,7 +32,8 @@ export class UrlsController {
   }
 
   @Post('/sitemap-parse')
-  async parseSitemap(@Body() url: UrlDto) {
-    return await this.urlsService.sitemapListParse(url);
+  async parseSitemap(@Body() sitemapDataDto: SitemapDataDto) {
+    const { url, classNames } = sitemapDataDto;
+    return await this.urlsService.sitemapListParse({ url }, classNames);
   }
 }

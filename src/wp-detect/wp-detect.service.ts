@@ -2,18 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { UrlDto } from '../urls/dto/url-dto';
-import { UrlsService } from '../urls/urls.service';
+import { validateUrl } from '../helpers';
 
 @Injectable()
 export class WpDetectService {
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly urlsService: UrlsService,
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   async checkWebsiteIsWP(websiteUrl: UrlDto): Promise<any> {
     try {
-      const validUrl = this.urlsService.validateUrl(websiteUrl.url);
+      const validUrl = await validateUrl(websiteUrl.url);
 
       const { data } = await lastValueFrom(this.httpService.get(validUrl));
 
