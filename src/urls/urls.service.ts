@@ -1,62 +1,54 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { UrlDto } from './dto/url-dto';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-// import Sitemapper from 'sitemapper';
-import * as fs from 'fs';
-import { SITEMAP_URLS_DIR } from '../common/constants';
-import { cleanHostname } from '../helpers/cleanHostname';
+import Sitemapper from 'sitemapper';
+import * as fs from 'node:fs/promises';
+import {
+  CRITERIA_DIR,
+  SITEMAP_URLS_DIR,
+  SITEMAP_VARIANTS_LIST,
+} from '../common/constants';
+import {
+  cleanHostname,
+  validateUrl,
+  isExistHostFile,
+  unlinkFile,
+  scrapingCriteriaGenerator,
+} from '../helpers';
 
 @Injectable()
 export class UrlsService {
   constructor(private readonly httpService: HttpService) {}
-  sitemapVariantsList: string[] = [
-    'sitemap-index.xml',
-    'sitemap.xml',
-    'sitemap.php',
-    'sitemap.txt',
-    'sitemap_index.xml',
-    'sitemap.xml.gz',
-    'sitemap/',
-    'sitemap/sitemap.xml',
-    'sitemapindex.xml',
-    'sitemap/index.xml',
-    'sitemap1.xml',
-  ];
 
-  async sitemapListParse(websiteUrl: UrlDto) {
-    const validUrl = await this.validateUrl(websiteUrl.url);
-    this.storeUrls(validUrl, 'test');
-    // const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
-    //
-    // if (correctSitemapUrl === null) return [];
-    // const sitemap = new Sitemapper({
-    //   url: `${correctSitemapUrl}`,
-    //   timeout: 15000, // 15 seconds
-    // });
-    //
-    // try {
-    //   const { sites } = await sitemap.fetch();
-    //   console.log(sites);
-    // } catch (error) {
-    //   console.log(error);
-    // }
-  }
+  async sitemapListParse(websiteUrl: UrlDto, classNames) {
+    const validUrl = await validateUrl(websiteUrl.url);
+    const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
 
-  validateUrl(url) {
-    const urlPattern =
-      /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/;
+    if (correctSitemapUrl === null) return [];
+    const sitemap = new Sitemapper({
+      url: `${correctSitemapUrl}`,
+      timeout: 15000, // 15 seconds
+    });
 
-    if (!urlPattern.test(url)) {
-      return `https://${url}`;
-    } else {
-      return url;
+    try {
+      const { sites } = await sitemap.fetch();
+
+      if (sites.length) {
+        await this.storeUrls(validUrl, sites);
+        await scrapingCriteriaGenerator(validUrl, classNames);
+      }
+    } catch (error) {
+      throw new BadRequestException('Something bad happened', {
+        cause: new Error(),
+        description: `Something bad happened while parsing sitemap`,
+      });
     }
   }
 
   async getValidSitemapUrl(siteUrl: string) {
     let sitemapUrl = null;
-    for await (const sitemap of this.sitemapVariantsList) {
+    for (const sitemap of SITEMAP_VARIANTS_LIST) {
       const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
 
       if (status === HttpStatus.OK) {
@@ -91,25 +83,36 @@ export class UrlsService {
 
   async storeUrls(url, urlList) {
     const host: string = cleanHostname(url);
-    let returnFilename: string[] | string = '';
-    fs.readdir(SITEMAP_URLS_DIR, (err, files) => {
-      if (err) return new Error('Something is wrong!');
-      returnFilename = files.filter((item) =>
-        item === `${host}_sitemap_url.json` ? `${host}_sitemap_url.json` : '',
-      );
-    console.log(returnFilename, urlList)
+    const isFileSitemapExist: boolean = await isExistHostFile({
+      host,
+      directory: SITEMAP_URLS_DIR,
+      fileName: '_sitemap_url',
     });
-    // try {
-    //   await fs.writeFile(
-    //     `${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
-    //     urlList,
-    //     { encoding: 'utf8', mode: '0644', flag: 'a' },
-    //     (err) => {
-    //       if (err) throw new Error(`Error writing data: ${err}`);
-    //     },
-    //   );
-    // } catch (e) {
-    //   console.log(e.code);
-    // }
+
+    if (isFileSitemapExist) {
+      await unlinkFile({
+        host,
+        directory: SITEMAP_URLS_DIR,
+        fileName: '_sitemap_url',
+      });
+      await unlinkFile({
+        host,
+        directory: CRITERIA_DIR,
+        fileName: '',
+      });
+    }
+
+    try {
+      await fs.writeFile(
+        `${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
+        JSON.stringify(urlList, null, 1),
+        { encoding: 'utf8', mode: '0644', flag: 'a' },
+      );
+    } catch (e) {
+      throw new BadRequestException('Something bad happened', {
+        cause: new Error(),
+        description: `Something bad happened while writing to file ${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
+      });
+    }
   }
 }
