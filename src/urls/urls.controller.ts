@@ -1,9 +1,10 @@
-import { Body, Controller, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Req } from '@nestjs/common';
 import { WpDetectService } from '../wp-detect/wp-detect.service';
 import { UrlDto } from './dto/url-dto';
 import { UrlsService } from './urls.service';
 import { SitemapDataDto } from './dto/sitemap-data.dto';
 import { StaticAnalyticsService } from '../static-analytics/static-analytics.service';
+import { Ip } from '../helpers'
 
 @Controller('urls')
 export class UrlsController {
@@ -14,6 +15,7 @@ export class UrlsController {
   ) {}
 
   @Post()
+  // @Ip() ip: string
   async checkUrl(@Body() url: UrlDto): Promise<any> {
     const result = await this.wpDetectService.checkWebsiteIsWP(url);
 
@@ -24,7 +26,9 @@ export class UrlsController {
         error: `Website ${url.url} not found or url is incorrect`,
       };
     }
-    const findHostname = await this.staticAnalyticsService.findHostname(url.url);
+    const findHostname = await this.staticAnalyticsService.findHostname(
+      url.url,
+    );
 
     if (!findHostname) {
       await this.staticAnalyticsService.createAnalytic({
