@@ -19,8 +19,6 @@ export class StaticAnalyticsService {
     const findHostname = await this.analyticsModel.findOne({
       hostname: hostname,
     });
-    if (!findHostname)
-      throw new HttpException('Hostname is not found', HttpStatus.NOT_FOUND);
 
     return findHostname;
   }
@@ -31,12 +29,15 @@ export class StaticAnalyticsService {
     });
 
     return this.analyticsModel.findByIdAndUpdate(
-      findHostname._id.toHexString(),
       {
-        hostname: findHostname.hostname,
-        tries: findHostname.tries + 1,
+        _id: findHostname._id.toHexString(),
       },
-      { new: true },
+      {
+        $set: {
+          hostname: findHostname.hostname,
+          tries: findHostname.tries + 1,
+        },
+      },
     );
   }
 }

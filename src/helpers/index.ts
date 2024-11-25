@@ -6,3 +6,4 @@ export * from './scrapingCriteriaGenerator';
 export * from './getSiteCriteria';
 export * from './findCurrentPage';
 export * from './formattingContent';
+export * from './requestIp';
