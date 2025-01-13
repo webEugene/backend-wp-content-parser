@@ -1,8 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Analytics } from '../schemas/Analytics.schemas';
+import { Analytics } from '../schemas/analytics.schemas';
 import { Model } from 'mongoose';
 import { UpdateAnalyticDto } from './dto/update-analytic.dto';
+import { UrlHostDto } from '../urls/dto/url-host.dto';
+import { CreateAnalyticDto } from './dto/create-analytic-dto';
 
 @Injectable()
 export class StaticAnalyticsService {
@@ -10,22 +12,22 @@ export class StaticAnalyticsService {
     @InjectModel(Analytics.name) private analyticsModel: Model<Analytics>,
   ) {}
 
-  async createAnalytic(updateAnalyticDto: { tries: number; hostname: string }) {
-    const newHost = new this.analyticsModel(updateAnalyticDto);
+  async createAnalytic(createAnalyticDto: CreateAnalyticDto) {
+    const newHost = new this.analyticsModel(createAnalyticDto);
     return newHost.save();
   }
 
-  async findHostname(hostname) {
-    const findHostname = await this.analyticsModel.findOne({
-      hostname: hostname,
+  async findHostname(urlHostDto: UrlHostDto) {
+    return this.analyticsModel.findOne({
+      website: urlHostDto.url,
+      host: urlHostDto.host,
     });
-
-    return findHostname;
   }
 
   async updateAnalytic(updateAnalyticDto: UpdateAnalyticDto) {
     const findHostname = await this.analyticsModel.findOne({
-      hostname: updateAnalyticDto.hostname,
+      website: updateAnalyticDto.website,
+      host: updateAnalyticDto.host,
     });
 
     return this.analyticsModel.findByIdAndUpdate(
@@ -34,10 +36,14 @@ export class StaticAnalyticsService {
       },
       {
         $set: {
-          hostname: findHostname.hostname,
           tries: findHostname.tries + 1,
+          wpDetect: updateAnalyticDto.wpDetect,
         },
       },
     );
+  }
+
+  async getAnalytics() {
+    return this.analyticsModel.find();
   }
 }

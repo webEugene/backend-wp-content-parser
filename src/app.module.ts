@@ -12,6 +12,9 @@ import { ParseDbModule } from './parse-db/parse-db.module';
 import { StaticAnalyticsModule } from './static-analytics/static-analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './auth/roles.guard';
+import { StaticAnalyticsController } from './static-analytics/static-analytics.controller';
 
 @Module({
   imports: [
@@ -33,6 +36,12 @@ import { UserModule } from './user/user.module';
     AuthModule,
     UserModule,
   ],
-  controllers: [UrlsController, ParseDbController],
+  controllers: [UrlsController, ParseDbController, StaticAnalyticsController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
