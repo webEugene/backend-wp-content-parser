@@ -6,7 +6,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class UpdateAnalyticDto {
+export class CreateAnalyticDto {
   @IsNotEmpty()
   @IsString()
   readonly website: string;
@@ -15,11 +15,11 @@ export class UpdateAnalyticDto {
   @IsNumber()
   readonly tries: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   readonly host: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsBoolean()
   readonly wpDetect: boolean;
 }

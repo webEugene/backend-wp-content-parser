@@ -11,11 +11,12 @@ export class WpDetectService {
   async checkWebsiteIsWP(websiteUrl: UrlDto): Promise<any> {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
-
       const { data } = await lastValueFrom(this.httpService.get(validUrl));
 
       const hasWpTheme: string = await this.getTheme(data);
       const hasWpPlugins: any[] = await this.getPlugins(data);
+
+      if (!hasWpTheme && hasWpPlugins.length === 0) return false;
 
       return hasWpTheme && hasWpPlugins.length > 0;
     } catch (error) {

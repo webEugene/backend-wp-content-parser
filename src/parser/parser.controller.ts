@@ -7,6 +7,7 @@ export class ParserController {
   constructor(private readonly parserService: ParserService) {}
 
   @Post('/content')
+  // @Roles(Role.ADMIN)
   async checkUrl(@Body() url: UrlDto): Promise<any> {
     await this.parserService.parseContent(url);
   }
