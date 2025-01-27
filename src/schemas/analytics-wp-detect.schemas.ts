@@ -1,7 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 
 @Schema()
-export class Analytics {
+export class AnalyticsWpDetect {
   @Prop({ required: true })
   website: string;
 
@@ -15,4 +15,6 @@ export class Analytics {
   wpDetect: boolean;
 }
 
-export const AnalyticsSchema = SchemaFactory.createForClass(Analytics);
+export const AnalyticsWpDetectSchema = SchemaFactory.createForClass(
+  AnalyticsWpDetect,
+);

@@ -11,10 +11,10 @@ import {
 } from '../common/constants';
 import {
   cleanHostname,
-  validateUrl,
   isExistHostFile,
-  unlinkFile,
   scrapingCriteriaGenerator,
+  unlinkFile,
+  validateUrl,
 } from '../helpers';
 
 @Injectable()
@@ -112,6 +112,42 @@ export class UrlsService {
       throw new BadRequestException('Something bad happened', {
         cause: new Error(),
         description: `Something bad happened while writing to file ${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
+      });
+    }
+  }
+
+  async checkWebsiteHasSitemapUrl(websiteUrl: UrlDto): Promise<any> {
+    try {
+      const validUrl = await validateUrl(websiteUrl.url);
+
+      return await this.getValidSitemapUrl(validUrl);
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getSitemapExtractedList(websiteUrl: UrlDto): Promise<any> {
+    const validUrl = await validateUrl(websiteUrl.url);
+    const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
+
+    if (correctSitemapUrl === null) return [];
+    const sitemap = new Sitemapper({
+      url: `${correctSitemapUrl}`,
+      timeout: 150000, // 15 seconds
+    });
+
+    try {
+      const { sites } = await sitemap.fetch();
+
+      if (sites.length) {
+        return sites;
+      }
+
+      return [];
+    } catch (error) {
+      throw new BadRequestException('Something bad happened', {
+        cause: new Error(),
+        description: `Something bad happened while parsing sitemap`,
       });
     }
   }
