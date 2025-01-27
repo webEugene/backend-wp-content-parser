@@ -9,12 +9,13 @@ import { join } from 'path';
 import { ParserModule } from './parser/parser.module';
 import { ParseDbController } from './parse-db/parse-db.controller';
 import { ParseDbModule } from './parse-db/parse-db.module';
-import { StaticAnalyticsModule } from './static-analytics/static-analytics.module';
+import { AnalyticsModule } from './static-analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
-import { StaticAnalyticsController } from './static-analytics/static-analytics.controller';
+import { AnalyticsController } from './static-analytics/analytics.controller';
+import { FeedbackController } from './feedback/feedback.controller';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { StaticAnalyticsController } from './static-analytics/static-analytics.c
     UrlsModule,
     WpDetectModule,
     ParserModule,
-    StaticAnalyticsModule,
+    AnalyticsModule,
     ParseDbModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
@@ -36,7 +37,7 @@ import { StaticAnalyticsController } from './static-analytics/static-analytics.c
     AuthModule,
     UserModule,
   ],
-  controllers: [UrlsController, ParseDbController, StaticAnalyticsController],
+  controllers: [UrlsController, ParseDbController, AnalyticsController, FeedbackController],
   providers: [
     {
       provide: APP_GUARD,
