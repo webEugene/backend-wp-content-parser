@@ -133,7 +133,7 @@ export class UrlsService {
     if (correctSitemapUrl === null) return [];
     const sitemap = new Sitemapper({
       url: `${correctSitemapUrl}`,
-      timeout: 150000, // 15 seconds
+      timeout: 15000000, // 15 seconds
     });
 
     try {
