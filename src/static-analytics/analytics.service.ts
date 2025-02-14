@@ -8,6 +8,7 @@ import { CreateAnalyticDto } from './dto/create-analytic-dto';
 import { AnalyticsSitemapTest } from '../schemas/analytics-sitemap-test.schemas';
 import { CreateSitemapAnalyticDto } from './dto/create-sitemap-analytic.dto';
 import { UpdateSitemapAnalyticDto } from './dto/update-sitemap-analytic.dto';
+import { APIFeatures } from '../utils/api-features';
 
 @Injectable()
 export class AnalyticsService {
@@ -59,8 +60,10 @@ export class AnalyticsService {
         _id: findHostname._id.toHexString(),
       },
       {
+        $inc: {
+          tries: 1,
+        },
         $set: {
-          tries: findHostname.tries + 1,
           wpDetect: updateAnalyticDto.wpDetect,
         },
       },
@@ -80,19 +83,38 @@ export class AnalyticsService {
         _id: findHostname._id.toHexString(),
       },
       {
+        $inc: {
+          tries: 1,
+        },
         $set: {
-          tries: findHostname.tries + 1,
           status: updateSitemapAnalyticDto.status,
         },
       },
     );
   }
 
-  async getWpCheckAnalytics() {
-    return this.analyticsWpDetectModel.find();
+  async getWpCheckAnalytics(query?: any): Promise<any> {
+    const features = new APIFeatures(this.analyticsWpDetectModel.find(), query)
+      .filter()
+      .sorting()
+      .limit()
+      .pagination();
+
+    return await features.mongooseQuery;
+    // return this.analyticsWpDetectModel.find();
   }
 
-  async getSitemapTestAnalytics() {
-    return this.analyticsSitemapTestModel.find();
+  async getSitemapTestAnalytics(query?: any): Promise<any> {
+    const features = new APIFeatures(
+      this.analyticsSitemapTestModel.find(),
+      query,
+    )
+      .filter()
+      .sorting()
+      .limit()
+      .pagination();
+
+    return await features.mongooseQuery;
+    // return this.analyticsSitemapTestModel.find();
   }
 }
