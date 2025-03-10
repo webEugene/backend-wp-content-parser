@@ -1,10 +1,13 @@
 export class APIFeatures {
   mongooseQuery: any;
   queryString: any;
+  model: any;
 
-  constructor(mongooseQuery: any, queryString: any) {
+  constructor(mongooseQuery: any, queryString: any, model: any) {
     this.mongooseQuery = mongooseQuery;
     this.queryString = queryString;
+
+    this.model = model;
   }
 
   filter() {
@@ -48,7 +51,7 @@ export class APIFeatures {
     return this;
   }
 
-  pagination() {
+  async pagination() {
     // get the page and convert it to a number. If no page set default to 1
     const page = this.queryString.page * 1 || 1;
 
@@ -58,10 +61,16 @@ export class APIFeatures {
     // calculate skip value
     const skip = (page - 1) * limit;
 
+    // Отримуємо загальну кількість документів
+    const totalDocuments = await this.model.countDocuments();
+    const totalPages = Math.ceil(totalDocuments / limit);
+
     // chain it to the mongoose query.
     this.mongooseQuery = this.mongooseQuery.skip(skip).limit(limit);
 
-    // return the object
+    // Додаємо загальну кількість сторінок
+    this.mongooseQuery.totalPages = totalPages;
+
     return this;
   }
 }

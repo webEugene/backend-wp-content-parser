@@ -10,8 +10,8 @@ export class AnalyticsController {
     return await this.analyticsService.getWpCheckAnalytics(request.query);
   }
 
-  @Get('/sitemap-test')
-  async getSitemapTestAnalytics(@Req() request: any) {
-    return await this.analyticsService.getSitemapTestAnalytics(request.query);
-  }
+  // @Get('/sitemap-test')
+  // async getSitemapTestAnalytics(@Req() request: any) {
+  //   return await this.analyticsService.getSitemapTestAnalytics(request.query);
+  // }
 }

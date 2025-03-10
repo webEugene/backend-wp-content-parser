@@ -134,4 +134,20 @@ export class UrlsController {
       });
     }
   }
+
+  @Post('/grab-links')
+  async grabLinks(@Body() urlHostDto: UrlHostDto) {
+    try {
+      const grabbedLinks = await this.urlsService.grabLinks(urlHostDto);
+      console.log(grabbedLinks);
+      if (grabbedLinks?.response?.statusCode === 400) {
+        throw new Error(grabbedLinks.response);
+      }
+      return grabbedLinks;
+    } catch (error) {
+      throw new NotFoundException({
+        message: error.message,
+      });
+    }
+  }
 }

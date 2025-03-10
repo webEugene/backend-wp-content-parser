@@ -15,6 +15,5 @@ export class AnalyticsWpDetect {
   wpDetect: boolean;
 }
 
-export const AnalyticsWpDetectSchema = SchemaFactory.createForClass(
-  AnalyticsWpDetect,
-);
+export const AnalyticsWpDetectSchema =
+  SchemaFactory.createForClass(AnalyticsWpDetect);

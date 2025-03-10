@@ -15,7 +15,8 @@ import { UserModule } from './user/user.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
 import { AnalyticsController } from './static-analytics/analytics.controller';
-import { FeedbackController } from './feedback/feedback.controller';
+import { ReportController } from './report/report.controller';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -31,13 +32,19 @@ import { FeedbackController } from './feedback/feedback.controller';
     ParserModule,
     AnalyticsModule,
     ParseDbModule,
+    AuthModule,
+    UserModule,
+    ReportModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
     }),
-    AuthModule,
-    UserModule,
   ],
-  controllers: [UrlsController, ParseDbController, AnalyticsController, FeedbackController],
+  controllers: [
+    UrlsController,
+    ParseDbController,
+    AnalyticsController,
+    ReportController,
+  ],
   providers: [
     {
       provide: APP_GUARD,

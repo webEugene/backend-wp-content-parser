@@ -94,27 +94,33 @@ export class AnalyticsService {
   }
 
   async getWpCheckAnalytics(query?: any): Promise<any> {
-    const features = new APIFeatures(this.analyticsWpDetectModel.find(), query)
-      .filter()
-      .sorting()
-      .limit()
-      .pagination();
-
-    return await features.mongooseQuery;
-    // return this.analyticsWpDetectModel.find();
-  }
-
-  async getSitemapTestAnalytics(query?: any): Promise<any> {
-    const features = new APIFeatures(
-      this.analyticsSitemapTestModel.find(),
+    const features = await new APIFeatures(
+      this.analyticsWpDetectModel.find(),
       query,
+      this.analyticsWpDetectModel,
     )
-      .filter()
-      .sorting()
       .limit()
       .pagination();
 
-    return await features.mongooseQuery;
-    // return this.analyticsSitemapTestModel.find();
+    const items = await features.mongooseQuery;
+
+    return {
+      items,
+      totalPages: features.mongooseQuery.totalPages, // Передаємо totalPages
+    };
   }
+
+  // async getSitemapTestAnalytics(query?: any): Promise<any> {
+  //   const features = new APIFeatures(
+  //     this.analyticsSitemapTestModel.find(),
+  //     query,
+  //   )
+  //     .filter()
+  //     .sorting()
+  //     .limit()
+  //     .pagination();
+  //
+  //   return await features.mongooseQuery;
+  //   // return this.analyticsSitemapTestModel.find();
+  // }
 }
