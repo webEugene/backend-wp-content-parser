@@ -6,6 +6,7 @@ import { HttpModule } from '@nestjs/axios';
 @Module({
   controllers: [ParserController],
   providers: [ParserService],
+  exports: [ParserService],
   imports: [HttpModule],
 })
 export class ParserModule {}

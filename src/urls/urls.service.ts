@@ -16,10 +16,14 @@ import {
   unlinkFile,
   validateUrl,
 } from '../helpers';
+import { ParserService } from '../parser/parser.service';
 
 @Injectable()
 export class UrlsService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly parserService: ParserService,
+  ) {}
 
   async sitemapListParse(websiteUrl: UrlDto, classNames) {
     const validUrl = await validateUrl(websiteUrl.url);
@@ -59,7 +63,7 @@ export class UrlsService {
     return sitemapUrl;
   }
 
-  async getSitemapUrl(url): Promise<{
+  async getSitemapUrl(url: string): Promise<{
     url: string;
     status: number;
     error: null | string;
@@ -81,7 +85,7 @@ export class UrlsService {
     }
   }
 
-  async storeUrls(url, urlList) {
+  async storeUrls(url: string, urlList: string[]) {
     const host: string = cleanHostname(url);
     const isFileSitemapExist: boolean = await isExistHostFile({
       host,
@@ -149,6 +153,24 @@ export class UrlsService {
         cause: new Error(),
         description: `Something bad happened while parsing sitemap`,
       });
+    }
+  }
+
+  async grabLinks(websiteUrl: UrlDto): Promise<any> {
+    try {
+      const validUrl = await validateUrl(websiteUrl.url);
+      const domainName = new URL(validUrl);
+
+      const grabbedLinks = await this.parserService.grabAllLinksFromPage(
+        validUrl,
+        domainName.origin,
+      );
+      return {
+        domain: domainName.origin,
+        data: grabbedLinks,
+      };
+    } catch (error) {
+      return error;
     }
   }
 }
