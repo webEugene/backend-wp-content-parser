@@ -14,5 +14,4 @@ export class ReportController {
   async createReport(@Body() createReportDto: CreateReportDto) {
     return await this.reportService.createReport(createReportDto);
   }
-
 }

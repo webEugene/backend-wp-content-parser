@@ -10,6 +10,9 @@ export class Report {
 
   @Prop({ required: true })
   report: string;
+
+  @Prop({ required: true, default: 0 })
+  status: number;
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);
