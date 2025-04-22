@@ -17,6 +17,7 @@ import {
   validateUrl,
 } from '../helpers';
 import { ParserService } from '../parser/parser.service';
+import { IClassNames } from '../common/interfaces/IClassNames';
 
 @Injectable()
 export class UrlsService {
@@ -25,9 +26,9 @@ export class UrlsService {
     private readonly parserService: ParserService,
   ) {}
 
-  async sitemapListParse(websiteUrl: UrlDto, classNames) {
-    const validUrl = await validateUrl(websiteUrl.url);
-    const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
+  async sitemapListParse(websiteUrl: UrlDto, classNames: IClassNames) {
+    const validatedUrl = await validateUrl(websiteUrl.url);
+    const correctSitemapUrl = await this.getValidSitemapUrl(validatedUrl);
 
     if (correctSitemapUrl === null) return [];
     const sitemap = new Sitemapper({
@@ -39,8 +40,8 @@ export class UrlsService {
       const { sites } = await sitemap.fetch();
 
       if (sites.length) {
-        await this.storeUrls(validUrl, sites);
-        await scrapingCriteriaGenerator(validUrl, classNames);
+        await this.storeUrls(validatedUrl, sites);
+        await scrapingCriteriaGenerator(validatedUrl, classNames);
       }
     } catch (error) {
       throw new BadRequestException('Something bad happened', {
@@ -59,7 +60,7 @@ export class UrlsService {
         sitemapUrl = url;
       }
     }
-
+    // TODO: if sitemap not found check if it exists in robots.txt
     return sitemapUrl;
   }
 

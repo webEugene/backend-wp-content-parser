@@ -6,7 +6,12 @@ import { lastValueFrom } from 'rxjs';
 export class WpDetectService {
   constructor(private readonly httpService: HttpService) {}
 
-  async checkWebsiteIsWP(websiteUrl: string): Promise<any> {
+  async checkWebsiteIsWP(websiteUrl: string): Promise<{
+    isWp: boolean;
+    url: string;
+    code?: string;
+    hostname?: string;
+  }> {
     try {
       const { data } = await lastValueFrom(this.httpService.get(websiteUrl));
 
@@ -25,12 +30,18 @@ export class WpDetectService {
         url: websiteUrl,
       };
     } catch (error) {
-      return error;
+      const code = error.code || (error.cause?.code ?? null);
+
+      return {
+        isWp: false,
+        url: websiteUrl,
+        code,
+      };
     }
   }
   async getTheme(body): Promise<string> {
     const theme = /\/themes\/[a-z-0-9]+\//.exec(body);
-    let themeName;
+    let themeName: string = '';
 
     if (theme !== null && theme[0])
       themeName = theme[0].replace('/themes/', '').replace('/', '');

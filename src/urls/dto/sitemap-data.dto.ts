@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { IClassNames } from '../../common/interfaces/IClassNames';
 
 export class SitemapDataDto {
   @IsNotEmpty()
@@ -7,5 +8,5 @@ export class SitemapDataDto {
 
   @IsOptional()
   @IsObject()
-  readonly classNames: object;
+  readonly classNames: IClassNames;
 }

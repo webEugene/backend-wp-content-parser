@@ -9,7 +9,6 @@ import { WpDetectService } from '../wp-detect/wp-detect.service';
 import { UrlsService } from './urls.service';
 import { SitemapDataDto } from './dto/sitemap-data.dto';
 import { AnalyticsService } from '../static-analytics/analytics.service';
-//import { Ip } from '../helpers';
 import { UrlHostDto } from './dto/url-host.dto';
 import { validateUrl } from '../helpers';
 import { SitemapTestDto } from './dto/sitemap-test.dto';
@@ -23,48 +22,66 @@ export class UrlsController {
   ) {}
 
   @Post('/wp-check')
-  // @Ip() ip: string
-  async detectWP(@Body() urlHostDto: UrlHostDto): Promise<any> {
-    const validUrl = await validateUrl(urlHostDto.url);
-    const result = await this.wpDetectService.checkWebsiteIsWP(validUrl);
+  async detectWP(@Body() urlHostDto: UrlHostDto): Promise<{
+    data: {
+      isWp: boolean;
+      url: string;
+    };
+    statusCode: number;
+    error: string | null;
+  }> {
+    try {
+      const { url } = urlHostDto;
+      const validatedUrl = await validateUrl(url);
+      const result = await this.wpDetectService.checkWebsiteIsWP(validatedUrl);
 
-    if (result?.code && result?.code === 'ENOTFOUND') {
+      if (result?.code && result?.code === 'ENOTFOUND') {
+        return {
+          data: {
+            isWp: false,
+            url: result.hostname,
+          },
+          statusCode: HttpStatus.NOT_FOUND,
+          error: `Website ${result.hostname} not found / url is incorrect`,
+        };
+      }
+
+      const findHost = await this.analyticsService.findHostname({
+        url: validatedUrl,
+        host: urlHostDto.host,
+      });
+
+      if (!findHost) {
+        await this.analyticsService.createWpCheckAnalytic({
+          website: validatedUrl,
+          tries: 1,
+          host: urlHostDto.host,
+          wpDetect: result.isWp,
+        });
+      } else {
+        await this.analyticsService.updateAnalytic({
+          website: findHost.website,
+          host: findHost.host,
+          tries: findHost.tries,
+          wpDetect: result.isWp,
+        });
+      }
+
+      return {
+        data: result,
+        statusCode: HttpStatus.OK,
+        error: null,
+      };
+    } catch (err) {
       return {
         data: {
           isWp: false,
-          url: result.hostname,
+          url: urlHostDto.url,
         },
-        statusCode: HttpStatus.NOT_FOUND,
-        error: `Website ${result.hostname} not found / url is incorrect`,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: err.message || 'Unexpected error occurred during detection',
       };
     }
-
-    const findHost = await this.analyticsService.findHostname({
-      url: validUrl,
-      host: urlHostDto.host,
-    });
-
-    if (!findHost) {
-      await this.analyticsService.createWpCheckAnalytic({
-        website: validUrl,
-        tries: 1,
-        host: urlHostDto.host,
-        wpDetect: result.isWp,
-      });
-    } else {
-      await this.analyticsService.updateAnalytic({
-        website: findHost.website,
-        host: findHost.host,
-        tries: findHost.tries,
-        wpDetect: result.isWp,
-      });
-    }
-
-    return {
-      data: result,
-      statusCode: HttpStatus.OK,
-      error: null,
-    };
   }
 
   @Post('/sitemap-parse')
