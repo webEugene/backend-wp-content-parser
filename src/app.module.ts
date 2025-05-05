@@ -17,9 +17,22 @@ import { RolesGuard } from './auth/roles.guard';
 import { AnalyticsController } from './static-analytics/analytics.controller';
 import { ReportController } from './report/report.controller';
 import { ReportModule } from './report/report.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 5,
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`./.env`],
@@ -49,6 +62,10 @@ import { ReportModule } from './report/report.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

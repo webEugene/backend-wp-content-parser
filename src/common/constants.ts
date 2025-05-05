@@ -10,6 +10,7 @@ export const SITEMAP_VARIANTS_LIST: string[] = [
   'sitemap_index.xml',
   'sitemap.xml.gz',
   'sitemap/',
+  'sitemap',
   'sitemap/sitemap.xml',
   'sitemapindex.xml',
   'sitemap/index.xml',
