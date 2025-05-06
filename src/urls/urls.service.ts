@@ -52,16 +52,17 @@ export class UrlsService {
   }
 
   async getValidSitemapUrl(siteUrl: string) {
-    let sitemapUrl = null;
-    for (const sitemap of SITEMAP_VARIANTS_LIST) {
-      const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
-
-      if (status === HttpStatus.OK) {
-        sitemapUrl = url;
-      }
-    }
-    // TODO: if sitemap not found check if it exists in robots.txt
-    return sitemapUrl;
+    return await this.getSitemapFromRobotsTxt(siteUrl);
+    // let sitemapUrl = null;
+    // for (const sitemap of SITEMAP_VARIANTS_LIST) {
+    //   const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
+    //
+    //   if (status === HttpStatus.OK) {
+    //     sitemapUrl = url;
+    //   }
+    // }
+    // // TODO: if sitemap not found check if it exists in robots.txt
+    // return sitemapUrl;
   }
 
   async getSitemapUrl(url: string): Promise<{
@@ -172,6 +173,31 @@ export class UrlsService {
       };
     } catch (error) {
       return error;
+    }
+  }
+
+  async getSitemapFromRobotsTxt(websiteUrl: string) {
+    try {
+      const { data, status } = await lastValueFrom(
+        this.httpService.get(`${websiteUrl}robots.txt`),
+      );
+      // const robotsUrl = new URL('/robots.txt', websiteUrl).href;
+      // const response = await axios.get(robotsUrl);
+      //
+      const sitemapUrls: string[] = [];
+
+      const lines = data.split('\n');
+      for (const line of lines) {
+        console.log(line, line.match(/^sitemap|Sitemap:\s*(.+)$/i));
+        const match = line.match(/^sitemap|Sitemap:\s*(.+)$/i);
+        if (match) {
+          sitemapUrls.push(match[1].trim());
+        }
+      }
+      return sitemapUrls;
+    } catch (error) {
+      console.error('Error fetching robots.txt:', error.message);
+      return [];
     }
   }
 }
