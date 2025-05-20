@@ -50,7 +50,7 @@ export class UrlsController {
         url: validatedUrl,
         host: urlHostDto.host,
       });
-
+      // TODO: improve code as a separate service
       if (!findHost) {
         await this.analyticsService.createWpCheckAnalytic({
           website: validatedUrl,
@@ -106,18 +106,18 @@ export class UrlsController {
           website: validUrl,
           tries: 1,
           host: sitemapTestDto.host,
-          status: result !== null,
+          status: result.length !== 0,
         });
       } else {
         await this.analyticsService.updateSitemapTestAnalytic({
           website: findHost.website,
           host: findHost.host,
           tries: findHost.tries,
-          status: result !== null,
+          status: result.length !== 0,
         });
       }
 
-      if (result === null)
+      if (result.length === 0)
         throw new Error('Website is not WP or does not have sitemap');
 
       return {
@@ -156,8 +156,8 @@ export class UrlsController {
   async grabLinks(@Body() urlHostDto: UrlHostDto) {
     try {
       const grabbedLinks = await this.urlsService.grabLinks(urlHostDto);
-      console.log(grabbedLinks);
-      if (grabbedLinks?.response?.statusCode === 400) {
+
+      if (grabbedLinks?.response?.statusCode === HttpStatus.BAD_REQUEST) {
         throw new Error(grabbedLinks.response);
       }
       return grabbedLinks;

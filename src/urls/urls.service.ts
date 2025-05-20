@@ -51,18 +51,24 @@ export class UrlsService {
     }
   }
 
-  async getValidSitemapUrl(siteUrl: string) {
-    return await this.getSitemapFromRobotsTxt(siteUrl);
-    // let sitemapUrl = null;
-    // for (const sitemap of SITEMAP_VARIANTS_LIST) {
-    //   const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
-    //
-    //   if (status === HttpStatus.OK) {
-    //     sitemapUrl = url;
-    //   }
-    // }
-    // // TODO: if sitemap not found check if it exists in robots.txt
-    // return sitemapUrl;
+  async getValidSitemapUrl(siteUrl: string): Promise<string[]> {
+    const isSitemapExist: string[] =
+      await this.getSitemapFromRobotsTxt(siteUrl);
+
+    if (isSitemapExist && isSitemapExist.length) {
+      return isSitemapExist;
+    }
+
+    const sitemapUrl: string[] = [];
+    for (const sitemap of SITEMAP_VARIANTS_LIST) {
+      const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
+
+      if (status === HttpStatus.OK) {
+        sitemapUrl.push(url);
+      }
+    }
+
+    return sitemapUrl;
   }
 
   async getSitemapUrl(url: string): Promise<{
@@ -87,7 +93,7 @@ export class UrlsService {
     }
   }
 
-  async storeUrls(url: string, urlList: string[]) {
+  async storeUrls(url: string, urlList: string[]): Promise<void> {
     const host: string = cleanHostname(url);
     const isFileSitemapExist: boolean = await isExistHostFile({
       host,
@@ -122,7 +128,7 @@ export class UrlsService {
     }
   }
 
-  async checkWebsiteHasSitemapUrl(websiteUrl: UrlDto): Promise<any> {
+  async checkWebsiteHasSitemapUrl(websiteUrl: UrlDto): Promise<string[]> {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
 
@@ -136,26 +142,35 @@ export class UrlsService {
     const validUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
 
-    if (correctSitemapUrl === null) return [];
-    const sitemap = new Sitemapper({
-      url: `${correctSitemapUrl}`,
-      timeout: 15000000, // 15 seconds
-    });
+    if (correctSitemapUrl.length === 0) return [];
 
-    try {
-      const { sites } = await sitemap.fetch();
+    const fetchPromises = correctSitemapUrl.map(
+      async (url: string): Promise<string[]> => {
+        const sitemap = new Sitemapper({ url, timeout: 15000 });
 
-      if (sites.length) {
-        return sites;
+        const res = await sitemap.fetch();
+        return res.sites;
+      },
+    );
+
+    const results = await Promise.allSettled(fetchPromises);
+
+    const allSites: string[] = [];
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allSites.push(...result.value);
+      } else {
+        console.warn(`Failed to fetch a sitemap:`, result.reason?.message);
+        throw new BadRequestException('Something bad happened', {
+          cause: new Error(),
+          description: `Failed to fetch a sitemap`,
+        });
       }
-
-      return [];
-    } catch (error) {
-      throw new BadRequestException('Something bad happened', {
-        cause: new Error(),
-        description: `Something bad happened while parsing sitemap`,
-      });
     }
+
+    // Optionally deduplicate the URLs
+    return Array.from(new Set(allSites));
   }
 
   async grabLinks(websiteUrl: UrlDto): Promise<any> {
@@ -178,25 +193,20 @@ export class UrlsService {
 
   async getSitemapFromRobotsTxt(websiteUrl: string) {
     try {
-      const { data, status } = await lastValueFrom(
+      const { data } = await lastValueFrom(
         this.httpService.get(`${websiteUrl}robots.txt`),
       );
-      // const robotsUrl = new URL('/robots.txt', websiteUrl).href;
-      // const response = await axios.get(robotsUrl);
-      //
       const sitemapUrls: string[] = [];
 
       const lines = data.split('\n');
       for (const line of lines) {
-        console.log(line, line.match(/^sitemap|Sitemap:\s*(.+)$/i));
-        const match = line.match(/^sitemap|Sitemap:\s*(.+)$/i);
+        const match = line.match(/^sitemap|Sitemap:\s*(.+)$/m);
         if (match) {
           sitemapUrls.push(match[1].trim());
         }
       }
       return sitemapUrls;
     } catch (error) {
-      console.error('Error fetching robots.txt:', error.message);
       return [];
     }
   }
