@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 
 @Injectable()
 export class WpDetectService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private readonly httpService: HttpService,
+  ) {}
 
   async checkWebsiteIsWP(websiteUrl: string): Promise<{
     isWp: boolean;
@@ -14,7 +19,6 @@ export class WpDetectService {
   }> {
     try {
       const { data } = await lastValueFrom(this.httpService.get(websiteUrl));
-
       const hasWpTheme: string = await this.getTheme(data);
       const hasWpPlugins: any[] = await this.getPlugins(data);
 

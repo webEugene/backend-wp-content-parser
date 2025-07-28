@@ -1,29 +1,41 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UrlDto } from '../urls/dto/url-dto';
-
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import {
   cleanHostname,
-  getSiteCriteria,
   validateUrl,
   formattingContent,
+  createCriteria,
+  getSiteCriteria,
 } from '../helpers';
-import { CRITERIA_DIR, SITEMAP_URLS_DIR } from '../common/constants';
 import { saveParsedDataToCsv } from '../helpers/saveParsedDataToCsv';
 import * as cheerio from 'cheerio';
+import { ParsingDataDto } from './dto/parsing-data.dto';
+import { ClassNamesType } from '../common/types/ClassNamesType';
+import { SITEMAP_URLS_DIR } from '../common/constants';
+import { getSitemapList } from '../helpers/getSitemapList';
 
 @Injectable()
 export class ParserService {
   constructor(private readonly httpService: HttpService) {}
 
-  async parseContent(websiteUrl: UrlDto) {
-    const validUrl = await validateUrl(websiteUrl.url);
-    const host: string = cleanHostname(validUrl);
-    const sitemapUrls = await getSiteCriteria(
-      `${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
-    );
-    const siteCriteria = await getSiteCriteria(`${CRITERIA_DIR}/${host}.json`);
+  async parseContent(data: ParsingDataDto) {
+    const { url } = data;
+
+    const validatedUrl = await validateUrl(url);
+    const webHost: string = cleanHostname(validatedUrl);
+    const getCriteriaList = createCriteria(data);
+    const sitemapUrls = await getSitemapList(webHost);
+    // const createCriteriaJson = createCriteria(data);
+    // const siteCriteria = await getSiteCriteria(
+    //   `${CRITERIA_DIR}/${webHost}.json`,
+    // );
+    // console.log(getCriteriaList);
+
+    return await this.parseContentByUrls(webHost, sitemapUrls, getCriteriaList);
+  }
+
+  async parseContentByUrls(host: string, urlsList: string[], siteCriteria) {
     const gatherData = [];
 
     const interval = setInterval(
@@ -45,6 +57,7 @@ export class ParserService {
               siteCriteria,
               value,
             );
+            // console.log(getFormattedData);
             gatherData.push(getFormattedData);
           } catch (e) {
             throw new BadRequestException('Something bad happened', {
@@ -55,7 +68,7 @@ export class ParserService {
         }
       },
       1000,
-      sitemapUrls[Symbol.iterator](),
+      urlsList[Symbol.iterator](),
     );
   }
 

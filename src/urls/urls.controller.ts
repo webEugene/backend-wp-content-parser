@@ -12,6 +12,7 @@ import { AnalyticsService } from '../static-analytics/analytics.service';
 import { UrlHostDto } from './dto/url-host.dto';
 import { validateUrl } from '../helpers';
 import { SitemapTestDto } from './dto/sitemap-test.dto';
+import { UrlDto } from './dto/url-dto';
 
 @Controller('urls')
 export class UrlsController {
@@ -85,9 +86,8 @@ export class UrlsController {
   }
 
   @Post('/sitemap-parse')
-  async parseSitemap(@Body() sitemapDataDto: SitemapDataDto) {
-    const { url, classNames } = sitemapDataDto;
-    return await this.urlsService.sitemapListParse({ url }, classNames);
+  async parseSitemap(@Body() urlDto: UrlDto) {
+    return await this.urlsService.sitemapListParse(urlDto);
   }
 
   @Post('/sitemap-check')
