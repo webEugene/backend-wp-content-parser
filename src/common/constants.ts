@@ -17,33 +17,82 @@ export const SITEMAP_VARIANTS_LIST: string[] = [
   'sitemap1.xml',
 ];
 
+export const TYPE_PAGES_LIST = [
+  'index',
+  'home',
+  'front-page',
+  'page',
+  'single',
+  'single-post',
+  'single-attachment',
+  'category',
+  'archive',
+  'taxonomy',
+  'tag',
+  'search',
+  'attachment',
+];
+
 /**
  * Default criteria JSON
  *
  * @type {{single: {h1: string, content: [string]}, default: {h1: string, content: [string]}, pageType: string, description: string, archive: {h1: string, content: [string]}, page: {h1: string, content: [string]}, title: string, home: {h1: string, content: [string]}}}
  */
 export const DEFAULT_SCRAPING_CRITERIA = {
-  pageType: 'pageType',
-  metaTitle: 'title',
-  metaDescription: 'meta[name="description"]',
+  index: {
+    title: 'h1',
+    content: [],
+  },
+  front_page: {
+    title: 'h1',
+    content: [],
+  },
   home: {
     title: 'h1',
-    content: ['div.content-bl'],
+    content: [],
   },
   page: {
     title: 'h1',
-    content: ['div.content-bl'],
+    content: [],
   },
   single: {
     title: 'h1',
-    content: ['div.content-bl'],
+    content: [],
+  },
+  single_post: {
+    title: 'h1',
+    content: [],
+  },
+  single_attachment: {
+    title: 'h1',
+    content: [],
   },
   archive: {
     title: 'h1',
-    content: ['div.content-bl'],
+    content: [],
+  },
+  category: {
+    title: 'h1',
+    content: [],
+  },
+  taxonomy: {
+    title: 'h1',
+    content: [],
+  },
+  tag: {
+    title: 'h1',
+    content: [],
+  },
+  search: {
+    title: 'h1',
+    content: [],
+  },
+  attachment: {
+    title: 'h1',
+    content: [],
   },
   default: {
     title: 'h1',
-    content: ['div.content-bl'],
+    content: [],
   },
 };

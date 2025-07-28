@@ -7,17 +7,19 @@ import { UrlsModule } from './urls/urls.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ParserModule } from './parser/parser.module';
-import { ParseDbController } from './parse-db/parse-db.controller';
-import { ParseDbModule } from './parse-db/parse-db.module';
 import { AnalyticsModule } from './static-analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
 import { AnalyticsController } from './static-analytics/analytics.controller';
 import { ReportController } from './report/report.controller';
 import { ReportModule } from './report/report.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { DevtoolsModule } from '@nestjs/devtools-integration';
+import { SecurityLoggingInterceptor } from './core/interceptors/security-logging.interceptor';
+import { Logger } from 'winston';
+import { WinstonModule } from 'nest-winston';
 
 @Module({
   imports: [
@@ -44,17 +46,21 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     WpDetectModule,
     ParserModule,
     AnalyticsModule,
-    ParseDbModule,
     AuthModule,
     UserModule,
     ReportModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
     }),
+    WinstonModule.forRoot({
+      // options
+    }),
+    DevtoolsModule.register({
+      http: process.env.NODE_ENV !== 'production',
+    }),
   ],
   controllers: [
     UrlsController,
-    ParseDbController,
     AnalyticsController,
     ReportController,
   ],
@@ -66,6 +72,14 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SecurityLoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: Logger,
     },
   ],
 })

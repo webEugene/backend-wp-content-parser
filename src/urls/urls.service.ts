@@ -12,12 +12,10 @@ import {
 import {
   cleanHostname,
   isExistHostFile,
-  scrapingCriteriaGenerator,
   unlinkFile,
   validateUrl,
 } from '../helpers';
 import { ParserService } from '../parser/parser.service';
-import { IClassNames } from '../common/interfaces/IClassNames';
 
 @Injectable()
 export class UrlsService {
@@ -26,7 +24,7 @@ export class UrlsService {
     private readonly parserService: ParserService,
   ) {}
 
-  async sitemapListParse(websiteUrl: UrlDto, classNames: IClassNames) {
+  async sitemapListParse(websiteUrl: UrlDto) {
     const validatedUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl = await this.getValidSitemapUrl(validatedUrl);
 
@@ -41,7 +39,6 @@ export class UrlsService {
 
       if (sites.length) {
         await this.storeUrls(validatedUrl, sites);
-        await scrapingCriteriaGenerator(validatedUrl, classNames);
       }
     } catch (error) {
       throw new BadRequestException('Something bad happened', {
@@ -106,11 +103,6 @@ export class UrlsService {
         host,
         directory: SITEMAP_URLS_DIR,
         fileName: '_sitemap_url',
-      });
-      await unlinkFile({
-        host,
-        directory: CRITERIA_DIR,
-        fileName: '',
       });
     }
 

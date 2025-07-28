@@ -3,7 +3,7 @@ import { IsOptional, IsString } from 'class-validator';
 export class ClassNamesDto {
   @IsOptional()
   @IsString()
-  readonly homeHeading: string;
+  readonly homeTitle: string;
 
   @IsOptional()
   @IsString()
@@ -11,7 +11,7 @@ export class ClassNamesDto {
 
   @IsOptional()
   @IsString()
-  readonly pageHeading: string;
+  readonly pageTitle: string;
 
   @IsOptional()
   @IsString()
@@ -19,7 +19,7 @@ export class ClassNamesDto {
 
   @IsOptional()
   @IsString()
-  readonly singleHeading: string;
+  readonly singleTitle: string;
 
   @IsOptional()
   @IsString()
@@ -27,9 +27,17 @@ export class ClassNamesDto {
 
   @IsOptional()
   @IsString()
-  readonly archiveHeading: string;
+  readonly archiveTitle: string;
 
   @IsOptional()
   @IsString()
   readonly archiveContent: string;
+
+  @IsOptional()
+  @IsString()
+  readonly defaultTitle: string;
+
+  @IsOptional()
+  @IsString()
+  readonly defaultContent: string;
 }
