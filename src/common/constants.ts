@@ -43,7 +43,7 @@ export const DEFAULT_SCRAPING_CRITERIA = {
     title: 'h1',
     content: [],
   },
-  front_page: {
+  frontPage: {
     title: 'h1',
     content: [],
   },
@@ -59,11 +59,11 @@ export const DEFAULT_SCRAPING_CRITERIA = {
     title: 'h1',
     content: [],
   },
-  single_post: {
+  singlePost: {
     title: 'h1',
     content: [],
   },
-  single_attachment: {
+  singleAttachment: {
     title: 'h1',
     content: [],
   },
@@ -88,10 +88,6 @@ export const DEFAULT_SCRAPING_CRITERIA = {
     content: [],
   },
   attachment: {
-    title: 'h1',
-    content: [],
-  },
-  default: {
     title: 'h1',
     content: [],
   },

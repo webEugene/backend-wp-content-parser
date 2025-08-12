@@ -37,3 +37,4 @@ lerna-debug.log*
 # Rest
 static/sitemap-urls/*
 static/criteria/*
+static/storage/*

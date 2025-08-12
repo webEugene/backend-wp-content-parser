@@ -9,7 +9,6 @@ export const isExistHostFile = async (
   data: IsExistHostFileType,
 ): Promise<boolean> => {
   const file: string = `${data.host}${data.fileName}.json`;
-
   const result: string[] = await fs.readdir(data.directory);
   const checkIfExist: string[] = result.filter((item) => item === file);
 

@@ -6,14 +6,13 @@ import {
   validateUrl,
   formattingContent,
   createCriteria,
-  getSiteCriteria,
+  findCurrentPage,
 } from '../helpers';
 import { saveParsedDataToCsv } from '../helpers/saveParsedDataToCsv';
 import * as cheerio from 'cheerio';
 import { ParsingDataDto } from './dto/parsing-data.dto';
-import { ClassNamesType } from '../common/types/ClassNamesType';
-import { SITEMAP_URLS_DIR } from '../common/constants';
 import { getSitemapList } from '../helpers/getSitemapList';
+import { UrlHostDto } from '../urls/dto/url-host.dto';
 
 @Injectable()
 export class ParserService {
@@ -26,50 +25,37 @@ export class ParserService {
     const webHost: string = cleanHostname(validatedUrl);
     const getCriteriaList = createCriteria(data);
     const sitemapUrls = await getSitemapList(webHost);
-    // const createCriteriaJson = createCriteria(data);
-    // const siteCriteria = await getSiteCriteria(
-    //   `${CRITERIA_DIR}/${webHost}.json`,
-    // );
-    // console.log(getCriteriaList);
 
     return await this.parseContentByUrls(webHost, sitemapUrls, getCriteriaList);
   }
 
+  private async delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async parseContentByUrls(host: string, urlsList: string[], siteCriteria) {
-    const gatherData = [];
+    const gatherData: any[] = [];
 
-    const interval = setInterval(
-      async (gen) => {
-        const { value, done } = gen.next();
-
-        if (done) {
-          clearInterval(interval);
-          await saveParsedDataToCsv(host, gatherData);
-        } else {
-          try {
-            const { data } = await lastValueFrom(this.httpService.get(value));
-            if (!data)
-              throw new Error(
-                `Parsing page ${value} has been missed! Status: 404`,
-              );
-            const getFormattedData = formattingContent(
-              data,
-              siteCriteria,
-              value,
-            );
-            // console.log(getFormattedData);
-            gatherData.push(getFormattedData);
-          } catch (e) {
-            throw new BadRequestException('Something bad happened', {
-              cause: new Error(),
-              description: `${e.message}`,
-            });
-          }
+    for (const pageUrl of urlsList) {
+      try {
+        const { data } = await lastValueFrom(this.httpService.get(pageUrl));
+        if (!data) {
+          console.warn(`Skipping page ${pageUrl} (empty data or 404)`);
+          continue;
         }
-      },
-      1000,
-      urlsList[Symbol.iterator](),
-    );
+
+        const formattedData = formattingContent(data, siteCriteria, pageUrl);
+        gatherData.push(formattedData);
+      } catch (e) {
+        console.error(`Failed to parse ${pageUrl}: ${e.message}`);
+      }
+
+      // Delay between requests to avoid overloading the server
+      await this.delay(500);
+    }
+
+    await saveParsedDataToCsv(host, gatherData);
+    return gatherData;
   }
 
   async grabAllLinksFromPage(url: string, domainOrigin: string) {
@@ -109,5 +95,50 @@ export class ParserService {
         },
       );
     }
+  }
+
+  async parseClasses(urlHostDto: UrlHostDto) {
+    const validatedUrl = await validateUrl(urlHostDto.url);
+    const webHost: string = cleanHostname(validatedUrl);
+    const sitemapUrls = await getSitemapList(webHost);
+
+    return await this.parseClassesFromUrls(sitemapUrls);
+  }
+
+  async parseClassesFromUrls(urls: string[]) {
+    const gatherData = new Set<string>();
+
+    for (const pageUrl of urls) {
+      try {
+        const { data } = await lastValueFrom(this.httpService.get(pageUrl));
+        if (!data) {
+          console.warn(`Skipping page ${pageUrl} (empty data or 404)`);
+          continue;
+        }
+
+        const $ = cheerio.load(data);
+        const bodyClass = $('body').attr('class')?.trim();
+        if (!bodyClass) {
+          console.warn(`[WARNING] Page ${pageUrl} — Body class not found`);
+          continue;
+        }
+
+        const currentPage = findCurrentPage(bodyClass);
+
+        if (!currentPage) {
+          console.warn(`[WARN] Page ${pageUrl} — Current page not found`);
+          continue;
+        }
+
+        gatherData.add(currentPage);
+      } catch (e) {
+        console.error(`Failed to parse ${pageUrl}: ${e.message}`);
+      }
+
+      // Delay between requests to avoid overloading the server
+      await this.delay(500);
+    }
+
+    return Array.from(gatherData);
   }
 }

@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { findCurrentPage } from './findCurrentPage';
+import { HttpStatus } from '@nestjs/common';
 
 /**
  * Formatting parsed data and prepare to save
@@ -15,37 +16,51 @@ export const formattingContent = (data, criteria, link) => {
   const bodyClass = $('body').attr('class');
 
   if (bodyClass === 'undefined')
-    throw new Error(`Parsing page ${link} has been missed! Status: 404`);
+    return {
+      DateTime: new Date().toLocaleString(),
+      ParsingLink: link,
+      StatusCode: HttpStatus.NOT_FOUND,
+      MessageError: `Got Error while parsing page ${link}! Body class is not found!`,
+    };
 
   const currentPage = findCurrentPage(bodyClass);
+
+  if (currentPage === 'undefined')
+    return {
+      DateTime: new Date().toLocaleString(),
+      ParsingLink: link,
+      StatusCode: HttpStatus.NOT_FOUND,
+      MessageError: `Got Error while parsing page ${link}! Current page is not found!`,
+    };
+
   const titleTmp = $(criteria.metaTitle).html();
   const descriptionTmp = $(criteria.metaDescription).attr('content');
-  // console.log(criteria, currentPage);
+
   const h1Title = $(criteria[currentPage].title).html() ?? '';
-  // const content = criteria[currentPage].content
-  //   .map((contentClass) => {
-  //     return $(contentClass).html()
-  //       ? $(contentClass).html().replace(/\s\s+/g, '')
-  //       : '';
-  //   })
-  //   .join(' ');
+  const content = criteria[currentPage].content
+    .map((contentClass) => {
+      return $(contentClass).html()
+        ? $(contentClass).html().replace(/\s\s+/g, '')
+        : '';
+    })
+    .join(' ');
 
   const cheerioRules = {
     title: titleTmp || 'Title is missing!',
     description: descriptionTmp || 'Description is missing!',
     h1Title: h1Title.trim() || 'h1 title is missing!',
-    // content: content || 'Content is missing!',
+    content: content || 'Content is missing!',
     // alts: altsImagesExtractor(content) || 'Alts are missing!',
   };
 
   return {
-    'Date time': new Date().toLocaleString(),
-    'Page Type': currentPage,
-    'Parsing Link': link,
-    'Meta Title': cheerioRules.title,
-    'Meta Description': cheerioRules.description,
-    'Main Title h1': cheerioRules.h1Title,
-    // 'Main content': `<div class=\"parsed-content\">${cheerioRules.content}</div>`,
+    DateTime: new Date().toLocaleString(),
+    PageType: currentPage,
+    ParsingLink: link,
+    MetaTitle: cheerioRules.title,
+    MetaDescription: cheerioRules.description,
+    MainTitleH1: cheerioRules.h1Title,
+    MainContent: `<div class=\"parsed-content\">${cheerioRules.content}</div>`,
     // 'Content Images Alt': cheerioRules.alts,
   };
 };

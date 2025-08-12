@@ -29,6 +29,7 @@ export class UrlsService {
     const correctSitemapUrl = await this.getValidSitemapUrl(validatedUrl);
 
     if (correctSitemapUrl === null) return [];
+
     const sitemap = new Sitemapper({
       url: `${correctSitemapUrl}`,
       timeout: 15000, // 15 seconds
@@ -51,7 +52,6 @@ export class UrlsService {
   async getValidSitemapUrl(siteUrl: string): Promise<string[]> {
     const isSitemapExist: string[] =
       await this.getSitemapFromRobotsTxt(siteUrl);
-
     if (isSitemapExist && isSitemapExist.length) {
       return isSitemapExist;
     }

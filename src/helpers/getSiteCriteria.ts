@@ -5,6 +5,8 @@ import {
   SITEMAP_URLS_DIR,
   TYPE_PAGES_LIST,
 } from '../common/constants';
+import { buildSection } from './buildSectionTitleContent';
+import { createTypeName } from './createTypeName';
 
 /**
  * Reads and parses the scraping criteria for a specific host
@@ -28,30 +30,15 @@ export const getCriteria = async (filePath: string) => {
   }
 };
 
-/**
- * Helper to construct a section (title + content)
- */
-const buildSection = (
-  criteria: Record<string, any>,
-  key: string,
-): { title: string; content: string[] } => {
-  const formatName = key.replace(/-/g, '_');
-
-  return {
-    title:
-      criteria?.[`${formatName}Title`] ??
-      DEFAULT_SCRAPING_CRITERIA[formatName]?.title,
-    content: criteria?.[`${formatName}Content`]
-      ? [criteria[`${formatName}Content`]]
-      : DEFAULT_SCRAPING_CRITERIA[formatName]?.content,
-  };
-};
-
 export const createCriteria = (criteria: Record<string, any> = {}) => {
   const sections = Object.fromEntries(
-    TYPE_PAGES_LIST.map((key) => [key, buildSection(criteria, key)]),
+    TYPE_PAGES_LIST.map((key) => {
+      const formatName = createTypeName(key);
+
+      return [formatName, buildSection(criteria, formatName)];
+    }),
   );
-  console.log(sections);
+
   return {
     pageType: 'pageType',
     metaTitle: 'title',
