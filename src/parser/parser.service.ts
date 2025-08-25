@@ -51,7 +51,7 @@ export class ParserService {
       }
 
       // Delay between requests to avoid overloading the server
-      await this.delay(500);
+      await this.delay(500 + Math.random() * 500);
     }
 
     await saveParsedDataToCsv(host, gatherData);
@@ -101,8 +101,12 @@ export class ParserService {
     const validatedUrl = await validateUrl(urlHostDto.url);
     const webHost: string = cleanHostname(validatedUrl);
     const sitemapUrls = await getSitemapList(webHost);
+    const getPages = await this.parseClassesFromUrls(sitemapUrls);
 
-    return await this.parseClassesFromUrls(sitemapUrls);
+    return {
+      site: urlHostDto.url,
+      pages: getPages,
+    };
   }
 
   async parseClassesFromUrls(urls: string[]) {
@@ -134,9 +138,8 @@ export class ParserService {
       } catch (e) {
         console.error(`Failed to parse ${pageUrl}: ${e.message}`);
       }
-
       // Delay between requests to avoid overloading the server
-      await this.delay(500);
+      await this.delay(10);
     }
 
     return Array.from(gatherData);

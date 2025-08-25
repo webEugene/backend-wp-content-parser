@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { WpDetectService } from '../wp-detect/wp-detect.service';
 import { UrlsService } from './urls.service';
-import { SitemapDataDto } from './dto/sitemap-data.dto';
 import { AnalyticsService } from '../static-analytics/analytics.service';
 import { UrlHostDto } from './dto/url-host.dto';
 import { validateUrl } from '../helpers';
