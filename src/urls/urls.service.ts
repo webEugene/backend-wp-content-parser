@@ -27,11 +27,11 @@ export class UrlsService {
   async sitemapListParse(websiteUrl: UrlDto) {
     const validatedUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl = await this.getValidSitemapUrl(validatedUrl);
-
+    console.log(validatedUrl, correctSitemapUrl);
     if (correctSitemapUrl === null) return [];
 
     const sitemap = new Sitemapper({
-      url: `${correctSitemapUrl}`,
+      url: `${correctSitemapUrl[0]}`,
       timeout: 15000, // 15 seconds
     });
 

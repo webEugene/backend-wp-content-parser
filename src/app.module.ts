@@ -20,6 +20,7 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { SecurityLoggingInterceptor } from './core/interceptors/security-logging.interceptor';
 import { Logger } from 'winston';
 import { WinstonModule } from 'nest-winston';
+import { AwsModule } from './aws/aws.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { WinstonModule } from 'nest-winston';
     DevtoolsModule.register({
       http: process.env.NODE_ENV !== 'production',
     }),
+    AwsModule,
   ],
   controllers: [
     UrlsController,
