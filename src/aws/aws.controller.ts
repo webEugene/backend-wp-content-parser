@@ -1,11 +1,6 @@
-import {
-  Controller,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Delete, Get, Post } from '@nestjs/common';
 import { AwsService } from './aws.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { SITEMAP_URLS_DIR } from '../common/constants';
 
 @Controller('aws')
 export class AwsController {
@@ -16,6 +11,21 @@ export class AwsController {
   // async uploadCsv(@UploadedFile() file: Express.Multer.File) {
   async uploadCsv() {
     // save to "reports" folder in S3
-    return this.awsService.uploadCsvFile();
+    // return this.awsService.uploadFile();
+  }
+  @Get('file-url')
+  async getFileUrl() {
+    // save to "reports" folder in S3
+    return this.awsService.getFileUrl(
+      `${SITEMAP_URLS_DIR}/miceleader_sitemap_url.json`,
+    );
+  }
+
+  @Delete('delete-url')
+  async deleteFileUrl() {
+    // save to "reports" folder in S3
+    return this.awsService.deleteFile(
+      `${SITEMAP_URLS_DIR}/miceleader_sitemap_url.json`,
+    );
   }
 }

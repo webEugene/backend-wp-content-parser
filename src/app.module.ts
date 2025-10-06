@@ -21,6 +21,7 @@ import { SecurityLoggingInterceptor } from './core/interceptors/security-logging
 import { Logger } from 'winston';
 import { WinstonModule } from 'nest-winston';
 import { AwsModule } from './aws/aws.module';
+import { SitemapModule } from './sitemap/sitemap.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AwsModule } from './aws/aws.module';
     AuthModule,
     UserModule,
     ReportModule,
+    AwsModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
     }),
@@ -60,12 +62,9 @@ import { AwsModule } from './aws/aws.module';
       http: process.env.NODE_ENV !== 'production',
     }),
     AwsModule,
+    SitemapModule,
   ],
-  controllers: [
-    UrlsController,
-    AnalyticsController,
-    ReportController,
-  ],
+  controllers: [UrlsController, AnalyticsController, ReportController],
   providers: [
     {
       provide: APP_GUARD,

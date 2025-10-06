@@ -1,33 +1,25 @@
-import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UrlDto } from './dto/url-dto';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
 import Sitemapper from 'sitemapper';
-import * as fs from 'node:fs/promises';
-import {
-  CRITERIA_DIR,
-  SITEMAP_URLS_DIR,
-  SITEMAP_VARIANTS_LIST,
-} from '../common/constants';
-import {
-  cleanHostname,
-  isExistHostFile,
-  unlinkFile,
-  validateUrl,
-} from '../helpers';
+import { SITEMAP_URLS_DIR } from '../common/constants';
+import { cleanHostname, validateUrl } from '../helpers';
 import { ParserService } from '../parser/parser.service';
+import { AwsService } from '../aws/aws.service';
+import { SitemapService } from '../sitemap/sitemap.service';
 
 @Injectable()
 export class UrlsService {
   constructor(
-    private readonly httpService: HttpService,
     private readonly parserService: ParserService,
+    private readonly awsService: AwsService,
+    private readonly sitemapeService: SitemapService,
   ) {}
 
   async sitemapListParse(websiteUrl: UrlDto) {
     const validatedUrl = await validateUrl(websiteUrl.url);
-    const correctSitemapUrl = await this.getValidSitemapUrl(validatedUrl);
-    console.log(validatedUrl, correctSitemapUrl);
+    const correctSitemapUrl =
+      await this.sitemapeService.getValidSitemapUrl(validatedUrl);
+
     if (correctSitemapUrl === null) return [];
 
     const sitemap = new Sitemapper({
@@ -37,9 +29,9 @@ export class UrlsService {
 
     try {
       const { sites } = await sitemap.fetch();
-
+      console.log('sdfsdfsdf');
       if (sites.length) {
-        await this.storeUrls(validatedUrl, sites);
+        await this.saveAndUploadSitemapToAWS(validatedUrl, sites);
       }
     } catch (error) {
       throw new BadRequestException('Something bad happened', {
@@ -49,68 +41,19 @@ export class UrlsService {
     }
   }
 
-  async getValidSitemapUrl(siteUrl: string): Promise<string[]> {
-    const isSitemapExist: string[] =
-      await this.getSitemapFromRobotsTxt(siteUrl);
-    if (isSitemapExist && isSitemapExist.length) {
-      return isSitemapExist;
-    }
-
-    const sitemapUrl: string[] = [];
-    for (const sitemap of SITEMAP_VARIANTS_LIST) {
-      const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
-
-      if (status === HttpStatus.OK) {
-        sitemapUrl.push(url);
-      }
-    }
-
-    return sitemapUrl;
-  }
-
-  async getSitemapUrl(url: string): Promise<{
-    url: string;
-    status: number;
-    error: null | string;
-  }> {
-    try {
-      const { status } = await lastValueFrom(this.httpService.get(url));
-      return {
-        url,
-        status,
-        error: null,
-      };
-    } catch (error) {
-      // Return status 0 for failed requests
-      return {
-        url,
-        status: 404,
-        error: error.message,
-      };
-    }
-  }
-
-  async storeUrls(url: string, urlList: string[]): Promise<void> {
+  async saveAndUploadSitemapToAWS(
+    url: string,
+    urlList: string[],
+  ): Promise<void> {
     const host: string = cleanHostname(url);
-    const isFileSitemapExist: boolean = await isExistHostFile({
-      host,
-      directory: SITEMAP_URLS_DIR,
-      fileName: '_sitemap_url',
-    });
-
-    if (isFileSitemapExist) {
-      await unlinkFile({
-        host,
-        directory: SITEMAP_URLS_DIR,
-        fileName: '_sitemap_url',
-      });
-    }
 
     try {
-      await fs.writeFile(
-        `${SITEMAP_URLS_DIR}/${host}_sitemap_url.json`,
-        JSON.stringify(urlList, null, 1),
-        { encoding: 'utf8', mode: '0644', flag: 'a' },
+      const fileName = `${host}_sitemap_url.json`;
+
+      await this.awsService.uploadJSON(
+        urlList,
+        'public/sitemap-urls',
+        fileName,
       );
     } catch (e) {
       throw new BadRequestException('Something bad happened', {
@@ -124,7 +67,7 @@ export class UrlsService {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
 
-      return await this.getValidSitemapUrl(validUrl);
+      return await this.sitemapeService.getValidSitemapUrl(validUrl);
     } catch (error) {
       return error;
     }
@@ -132,7 +75,8 @@ export class UrlsService {
 
   async getSitemapExtractedList(websiteUrl: UrlDto): Promise<any> {
     const validUrl = await validateUrl(websiteUrl.url);
-    const correctSitemapUrl = await this.getValidSitemapUrl(validUrl);
+    const correctSitemapUrl =
+      await this.sitemapeService.getValidSitemapUrl(validUrl);
 
     if (correctSitemapUrl.length === 0) return [];
 
@@ -180,26 +124,6 @@ export class UrlsService {
       };
     } catch (error) {
       return error;
-    }
-  }
-
-  async getSitemapFromRobotsTxt(websiteUrl: string) {
-    try {
-      const { data } = await lastValueFrom(
-        this.httpService.get(`${websiteUrl}robots.txt`),
-      );
-      const sitemapUrls: string[] = [];
-
-      const lines = data.split('\n');
-      for (const line of lines) {
-        const match = line.match(/^sitemap|Sitemap:\s*(.+)$/m);
-        if (match) {
-          sitemapUrls.push(match[1].trim());
-        }
-      }
-      return sitemapUrls;
-    } catch (error) {
-      return [];
     }
   }
 }
