@@ -11,7 +11,7 @@ import { HttpStatus } from '@nestjs/common';
  *
  // * @returns {{'Page Type': *, 'Meta Description': (*|jQuery|string), 'Main content': string, 'Date time': string, 'Parsing Link', 'Meta Title': (*|jQuery|string), 'Main Title h1': (jQuery|*|string), 'Content Images Alt': string}}
  */
-export const formattingContent = (data, criteria, link) => {
+export const formattingContent = (data: any, criteria, link) => {
   const $ = cheerio.load(data);
   const bodyClass = $('body').attr('class');
 
