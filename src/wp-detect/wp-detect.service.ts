@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
+import * as cheerio from 'cheerio';
 
 @Injectable()
 export class WpDetectService {
@@ -19,8 +20,11 @@ export class WpDetectService {
   }> {
     try {
       const { data } = await lastValueFrom(this.httpService.get(websiteUrl));
-      const hasWpTheme: string = await this.getTheme(data);
-      const hasWpPlugins: any[] = await this.getPlugins(data);
+      const $ = cheerio.load(data);
+      const head = $('head').prop('outerHTML');
+
+      const hasWpTheme: string = await this.getTheme(head);
+      const hasWpPlugins: any[] = await this.getPlugins(head);
 
       if (!hasWpTheme && hasWpPlugins.length === 0) {
         return {
@@ -43,9 +47,9 @@ export class WpDetectService {
       };
     }
   }
-  async getTheme(body): Promise<string> {
-    const theme = /\/themes\/[a-z-0-9]+\//.exec(body);
-    let themeName: string = '';
+  async getTheme(body: string): Promise<string> {
+    const theme = /\/themes\/[A-Z-a-z-0-9]+\//.exec(body);
+    let themeName: string = null;
 
     if (theme !== null && theme[0])
       themeName = theme[0].replace('/themes/', '').replace('/', '');
@@ -53,16 +57,19 @@ export class WpDetectService {
     return themeName;
   }
 
-  async getPlugins(body): Promise<any[]> {
-    let plugins = body.match(/\/plugins\/[a-z-0-9]+\//g);
+  async getPlugins(body: string): Promise<any[]> {
+    const plugins = body.match(/\/plugins\/[A-Z-a-z-0-9]+\//g);
+    let pluginsList: string[] = [];
 
     if (plugins !== null && plugins[0]) {
       // If the declaration is misinformed
       if (plugins[0].length > 800) return [];
 
-      plugins = plugins.map((p) => p.replace('/plugins/', '').replace('/', ''));
+      pluginsList = plugins.map((p) =>
+        p.replace('/plugins/', '').replace('/', ''),
+      );
 
-      return [...new Set(plugins)];
+      return [...new Set(pluginsList)];
     }
 
     return [];

@@ -22,6 +22,7 @@ import { Logger } from 'winston';
 import { WinstonModule } from 'nest-winston';
 import { AwsModule } from './aws/aws.module';
 import { SitemapModule } from './sitemap/sitemap.module';
+import { FrameworkDetectorModule } from './framework-detector/framework-detector.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { SitemapModule } from './sitemap/sitemap.module';
     }),
     AwsModule,
     SitemapModule,
+    FrameworkDetectorModule,
   ],
   controllers: [UrlsController, AnalyticsController, ReportController],
   providers: [

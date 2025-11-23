@@ -13,6 +13,15 @@ import { validateUrl } from '../helpers';
 import { SitemapTestDto } from './dto/sitemap-test.dto';
 import { UrlDto } from './dto/url-dto';
 
+type WPCheckResponseType = {
+  data: {
+    isWp: boolean;
+    url: string;
+  };
+  statusCode: number;
+  error: string | null;
+};
+
 @Controller('urls')
 export class UrlsController {
   constructor(
@@ -22,19 +31,12 @@ export class UrlsController {
   ) {}
 
   @Post('/wp-check')
-  async detectWP(@Body() urlHostDto: UrlHostDto): Promise<{
-    data: {
-      isWp: boolean;
-      url: string;
-    };
-    statusCode: number;
-    error: string | null;
-  }> {
+  async detectWP(@Body() urlHostDto: UrlHostDto): Promise<WPCheckResponseType> {
     try {
       const { url } = urlHostDto;
       const validatedUrl = await validateUrl(url);
       const result = await this.wpDetectService.checkWebsiteIsWP(validatedUrl);
-
+      console.log(result);
       if (result?.code && result?.code === 'ENOTFOUND') {
         return {
           data: {

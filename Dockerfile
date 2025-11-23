@@ -19,7 +19,7 @@ FROM node:21-alpine
 
 WORKDIR /app
 COPY package*.json ./
-ENV PORT=3000
+ENV PORT=5000
 ENV NODE_ENV=Production
 RUN npm install
 COPY --from=builder /app/dist ./dist

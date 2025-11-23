@@ -29,7 +29,7 @@ export class UrlsService {
 
     try {
       const { sites } = await sitemap.fetch();
-      console.log('sdfsdfsdf');
+
       if (sites.length) {
         await this.saveAndUploadSitemapToAWS(validatedUrl, sites);
       }
