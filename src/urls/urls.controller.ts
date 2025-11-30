@@ -36,7 +36,7 @@ export class UrlsController {
       const { url } = urlHostDto;
       const validatedUrl = await validateUrl(url);
       const result = await this.wpDetectService.checkWebsiteIsWP(validatedUrl);
-      console.log(result);
+
       if (result?.code && result?.code === 'ENOTFOUND') {
         return {
           data: {
@@ -134,10 +134,19 @@ export class UrlsController {
   }
 
   @Post('/sitemap-extract')
-  async extractSitemapList(@Body() urlHostDto: UrlHostDto) {
+  async extractSitemapList(@Body() urlHostDto: UrlHostDto): Promise<{
+    data: {
+      total: number;
+      allowedLinks: string[];
+    };
+    statusCode: number;
+    error: null;
+  }> {
     try {
-      const sitemapList =
-        await this.urlsService.getSitemapExtractedList(urlHostDto);
+      const sitemapList = await this.urlsService.getSitemapExtractedList(
+        urlHostDto,
+        true,
+      );
       if (sitemapList.length === 0)
         throw new Error('Website does not have sitemap or url is incorrect');
 
