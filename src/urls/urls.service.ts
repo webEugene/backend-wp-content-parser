@@ -12,13 +12,13 @@ export class UrlsService {
   constructor(
     private readonly parserService: ParserService,
     private readonly awsService: AwsService,
-    private readonly sitemapeService: SitemapService,
+    private readonly sitemapService: SitemapService,
   ) {}
 
   async sitemapListParse(websiteUrl: UrlDto) {
     const validatedUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl =
-      await this.sitemapeService.getValidSitemapUrl(validatedUrl);
+      await this.sitemapService.getValidSitemapUrl(validatedUrl);
 
     if (correctSitemapUrl === null) return [];
 
@@ -67,16 +67,19 @@ export class UrlsService {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
 
-      return await this.sitemapeService.getValidSitemapUrl(validUrl);
+      return await this.sitemapService.getValidSitemapUrl(validUrl);
     } catch (error) {
       return error;
     }
   }
 
-  async getSitemapExtractedList(websiteUrl: UrlDto): Promise<any> {
+  async getSitemapExtractedList(
+    websiteUrl: UrlDto,
+    isFreeUser?: boolean,
+  ): Promise<any> {
     const validUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl =
-      await this.sitemapeService.getValidSitemapUrl(validUrl);
+      await this.sitemapService.getValidSitemapUrl(validUrl);
 
     if (correctSitemapUrl.length === 0) return [];
 
@@ -105,8 +108,22 @@ export class UrlsService {
       }
     }
 
-    // Optionally deduplicate the URLs
-    return Array.from(new Set(allSites));
+    // Deduplicate
+    const uniqueSites = Array.from(new Set(allSites));
+
+    // FREE USER → return max 100
+    if (isFreeUser) {
+      return {
+        total: uniqueSites.length,
+        allowedLinks: uniqueSites.slice(0, 1000),
+      };
+    }
+
+    // PAID USER → return everything
+    return {
+      total: uniqueSites.length,
+      allowedLinks: uniqueSites,
+    };
   }
 
   async grabLinks(websiteUrl: UrlDto): Promise<any> {
