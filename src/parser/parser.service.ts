@@ -13,6 +13,7 @@ import * as cheerio from 'cheerio';
 import { ParsingDataDto } from './dto/parsing-data.dto';
 import { getSitemapList } from '../helpers/getSitemapList';
 import { UrlHostDto } from '../urls/dto/url-host.dto';
+import { HEADER_REQUEST } from '../common/constants';
 
 @Injectable()
 export class ParserService {
@@ -38,7 +39,9 @@ export class ParserService {
 
     for (const pageUrl of urlsList) {
       try {
-        const { data } = await lastValueFrom(this.httpService.get(pageUrl));
+        const { data } = await lastValueFrom(
+          this.httpService.get(pageUrl, HEADER_REQUEST),
+        );
         if (!data) {
           console.warn(`Skipping page ${pageUrl} (empty data or 404)`);
           continue;
@@ -60,7 +63,9 @@ export class ParserService {
 
   async grabAllLinksFromPage(url: string, domainOrigin: string) {
     try {
-      const { data } = await lastValueFrom(this.httpService.get(url));
+      const { data } = await lastValueFrom(
+        this.httpService.get(url, HEADER_REQUEST),
+      );
       const $ = cheerio.load(data);
       const links = [];
 
@@ -114,7 +119,9 @@ export class ParserService {
 
     for (const pageUrl of urls) {
       try {
-        const { data } = await lastValueFrom(this.httpService.get(pageUrl));
+        const { data } = await lastValueFrom(
+          this.httpService.get(pageUrl, HEADER_REQUEST),
+        );
         if (!data) {
           console.warn(`Skipping page ${pageUrl} (empty data or 404)`);
           continue;
