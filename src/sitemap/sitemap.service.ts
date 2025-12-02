@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { SITEMAP_VARIANTS_LIST } from '../common/constants';
+import { HEADER_REQUEST, SITEMAP_VARIANTS_LIST } from '../common/constants';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable()
@@ -32,7 +32,9 @@ export class SitemapService {
     error: null | string;
   }> {
     try {
-      const { status } = await lastValueFrom(this.httpService.get(url));
+      const { status } = await lastValueFrom(
+        this.httpService.get(url, HEADER_REQUEST),
+      );
       return {
         url,
         status,
@@ -50,7 +52,7 @@ export class SitemapService {
   async getSitemapFromRobotsTxt(websiteUrl: string) {
     try {
       const { data } = await lastValueFrom(
-        this.httpService.get(`${websiteUrl}robots.txt`),
+        this.httpService.get(`${websiteUrl}robots.txt`, HEADER_REQUEST),
       );
       const sitemapUrls: string[] = [];
 

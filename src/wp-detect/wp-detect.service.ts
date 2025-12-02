@@ -4,6 +4,7 @@ import { lastValueFrom } from 'rxjs';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import * as cheerio from 'cheerio';
+import { HEADER_REQUEST } from '../common/constants';
 
 @Injectable()
 export class WpDetectService {
@@ -19,7 +20,9 @@ export class WpDetectService {
     hostname?: string;
   }> {
     try {
-      const { data } = await lastValueFrom(this.httpService.get(websiteUrl));
+      const { data } = await lastValueFrom(
+        this.httpService.get(websiteUrl, HEADER_REQUEST),
+      );
       const $ = cheerio.load(data);
       const head = $('head').prop('outerHTML');
 
