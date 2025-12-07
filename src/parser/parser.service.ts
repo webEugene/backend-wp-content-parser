@@ -3,10 +3,10 @@ import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import {
   cleanHostname,
-  validateUrl,
-  formattingContent,
   createCriteria,
   findCurrentPage,
+  formattingContent,
+  validateUrl,
 } from '../helpers';
 import { saveParsedDataToCsv } from '../helpers/saveParsedDataToCsv';
 import * as cheerio from 'cheerio';
@@ -14,6 +14,7 @@ import { ParsingDataDto } from './dto/parsing-data.dto';
 import { getSitemapList } from '../helpers/getSitemapList';
 import { UrlHostDto } from '../urls/dto/url-host.dto';
 import { HEADER_REQUEST } from '../common/constants';
+import puppeteer from 'puppeteer';
 
 @Injectable()
 export class ParserService {
@@ -63,10 +64,9 @@ export class ParserService {
 
   async grabAllLinksFromPage(url: string, domainOrigin: string) {
     try {
-      const { data } = await lastValueFrom(
-        this.httpService.get(url, HEADER_REQUEST),
-      );
-      const $ = cheerio.load(data);
+      const page = await this.parseHtmlByPuppeteer(url);
+
+      const $ = cheerio.load(page);
       const links = [];
 
       // Select all anchor tags and extract href attributes
@@ -150,5 +150,82 @@ export class ParserService {
     }
 
     return Array.from(gatherData);
+  }
+
+  async parseHtmlByPuppeteer(
+    url: string,
+    options?: {
+      returnContent?: boolean; // default: true
+      returnStatusOnly?: boolean; // default: false
+      delayMs?: number; // default: 4000
+    },
+  ): Promise<
+    | { status: 'success' | 'error'; content?: string; url: string }
+    | { status: 'success' | 'error'; url: string }
+  > {
+    const {
+      returnContent = true,
+      returnStatusOnly = false,
+      delayMs = 4000,
+    } = options ?? {};
+
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        ],
+      });
+
+      const page = await browser.newPage();
+
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+      });
+
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          get: () => 8,
+        });
+      });
+
+      const response = await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000,
+      });
+
+      const statusCode = response?.status() ?? null;
+
+      // Delay to allow dynamic content
+      await new Promise((r) => setTimeout(r, delayMs));
+
+      await browser.close();
+
+      // If user wants only status:
+      if (returnStatusOnly) {
+        return {
+          status: statusCode && statusCode < 400 ? 'success' : 'error',
+          url,
+        };
+      }
+
+      // If full content is needed
+      const content = returnContent ? await page.content() : undefined;
+
+      return {
+        status: 'success',
+        url,
+        content,
+      };
+    } catch (err) {
+      return {
+        status: 'error',
+        url,
+      };
+    }
   }
 }

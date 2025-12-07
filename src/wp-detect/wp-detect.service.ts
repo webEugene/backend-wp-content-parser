@@ -1,16 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import * as cheerio from 'cheerio';
-import { HEADER_REQUEST } from '../common/constants';
+import { ParserService } from '../parser/parser.service';
 
 @Injectable()
 export class WpDetectService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-    private readonly httpService: HttpService,
+    private readonly parserService: ParserService,
   ) {}
 
   async checkWebsiteIsWP(websiteUrl: string): Promise<{
@@ -20,10 +18,8 @@ export class WpDetectService {
     hostname?: string;
   }> {
     try {
-      const { data } = await lastValueFrom(
-        this.httpService.get(websiteUrl, HEADER_REQUEST),
-      );
-      const $ = cheerio.load(data);
+      const result = await this.parserService.parseHtmlByPuppeteer(websiteUrl);
+      const $ = cheerio.load(result.content);
       const head = $('head').prop('outerHTML');
 
       const hasWpTheme: string = await this.getTheme(head);
