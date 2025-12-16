@@ -1,11 +1,14 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { HEADER_REQUEST, SITEMAP_VARIANTS_LIST } from '../common/constants';
-import { lastValueFrom } from 'rxjs';
+import {  SITEMAP_VARIANTS_LIST } from '../common/constants';
+import { ParserService } from '../parser/parser.service';
 
 @Injectable()
 export class SitemapService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly parserService: ParserService,
+  ) {}
 
   async getValidSitemapUrl(siteUrl: string): Promise<string[]> {
     const isSitemapExist: string[] =
@@ -13,7 +16,7 @@ export class SitemapService {
     if (isSitemapExist && isSitemapExist.length) {
       return isSitemapExist;
     }
-
+    console.log(isSitemapExist);
     const sitemapUrl: string[] = [];
     for (const sitemap of SITEMAP_VARIANTS_LIST) {
       const { url, status } = await this.getSitemapUrl(`${siteUrl}${sitemap}`);
@@ -32,12 +35,10 @@ export class SitemapService {
     error: null | string;
   }> {
     try {
-      const { status } = await lastValueFrom(
-        this.httpService.get(url, HEADER_REQUEST),
-      );
+      const result = await this.parserService.parseHtmlByPuppeteer(url);
       return {
         url,
-        status,
+        status: result.statusCode,
         error: null,
       };
     } catch (error) {
@@ -51,18 +52,21 @@ export class SitemapService {
 
   async getSitemapFromRobotsTxt(websiteUrl: string) {
     try {
-      const { data } = await lastValueFrom(
-        this.httpService.get(`${websiteUrl}robots.txt`, HEADER_REQUEST),
+      const result = await this.parserService.parseHtmlByPuppeteer(
+        `${websiteUrl}robots.txt`,
       );
+
       const sitemapUrls: string[] = [];
 
-      const lines = data.split('\n');
+      const lines = result.content!.split('\n');
+
       for (const line of lines) {
-        const match = line.match(/^sitemap|Sitemap:\s*(.+)$/m);
+        const match = line.match(/^sitemap|Sitemap:\s*(https?:\/\/[^\s<]+)/m);
         if (match) {
           sitemapUrls.push(match[1].trim());
         }
       }
+
       return sitemapUrls;
     } catch (error) {
       return [];

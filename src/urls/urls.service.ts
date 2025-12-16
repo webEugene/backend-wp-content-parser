@@ -130,7 +130,7 @@ export class UrlsService {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
       const domainName = new URL(validUrl);
-      console.log(validUrl);
+
       const grabbedLinks = await this.parserService.grabAllLinksFromPage(
         validUrl,
         domainName.origin,

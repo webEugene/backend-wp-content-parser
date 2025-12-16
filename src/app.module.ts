@@ -16,7 +16,6 @@ import { AnalyticsController } from './static-analytics/analytics.controller';
 import { ReportController } from './report/report.controller';
 import { ReportModule } from './report/report.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { SecurityLoggingInterceptor } from './core/interceptors/security-logging.interceptor';
 import { Logger } from 'winston';
 import { WinstonModule } from 'nest-winston';
@@ -38,6 +37,7 @@ import { FrameworkDetectorModule } from './framework-detector/framework-detector
         limit: 10,
       },
     ]),
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`./.env`],
@@ -52,15 +52,11 @@ import { FrameworkDetectorModule } from './framework-detector/framework-detector
     AuthModule,
     UserModule,
     ReportModule,
-    AwsModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static'),
     }),
     WinstonModule.forRoot({
       // options
-    }),
-    DevtoolsModule.register({
-      http: process.env.NODE_ENV !== 'production',
     }),
     AwsModule,
     SitemapModule,
