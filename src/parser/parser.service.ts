@@ -15,6 +15,7 @@ import { getSitemapList } from '../helpers/getSitemapList';
 import { UrlHostDto } from '../urls/dto/url-host.dto';
 import { HEADER_REQUEST } from '../common/constants';
 import puppeteer from 'puppeteer';
+import { XMLParser } from 'fast-xml-parser';
 
 @Injectable()
 export class ParserService {
@@ -236,5 +237,142 @@ export class ParserService {
         content: null,
       };
     }
+  }
+  private visited = new Set<string>();
+  async parseSitemap(url: string) {
+    // avoid re-parsing
+    if (this.visited.has(url)) return [];
+    this.visited.add(url);
+
+    const xmlParser = new XMLParser({
+      ignoreAttributes: false,
+      allowBooleanAttributes: true,
+      processEntities: true,
+    });
+    const browser = await puppeteer.launch({
+      headless: true,
+      devtools: false,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--remote-debugging-port=0',
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      ],
+    });
+
+    try {
+      const page = await browser.newPage();
+
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+      });
+
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          get: () => 8,
+        });
+      });
+
+      const response = await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 20000,
+      });
+      // ------------------------------------------------
+      // Detect content type
+      // ------------------------------------------------
+
+      const contentType = response?.headers()['content-type'] || '';
+
+      const text = await page.evaluate(() => {
+        return document.documentElement.innerText || '';
+      });
+
+      const isXML =
+        contentType.includes('xml') ||
+        text.includes('<urlset') ||
+        text.includes('<sitemapindex');
+
+      // =================================================
+      // 1️⃣ XML sitemap index / urlset
+      // =================================================
+      // console.log(111, isXML);
+      // if (isXML) {
+      //   return await this.parseXmlContent(text, url);
+      // }
+
+      // =================================================
+      // 2️⃣ HTML Yoast sitemap page
+      // =================================================
+
+      const isHtmlSitemap = await page.evaluate(() => {
+        return document.querySelector('#sitemap') !== null;
+      });
+
+      console.log(222, isHtmlSitemap);
+      if (isHtmlSitemap) {
+        const links = await page.evaluate(() =>
+          Array.from(document.querySelectorAll('#sitemap a')).map(
+            (a) => (a as HTMLAnchorElement).href,
+          ),
+        );
+        console.log(links);
+        const result: string[] = [];
+
+        for (const link of links) {
+          // recursively parse — whether xml or html doesn't matter here
+          result.push(...(await this.parseSitemap(link)));
+        }
+
+        return result;
+      }
+
+      // normal HTML page → not a sitemap → return no recursion
+      return [];
+    } finally {
+      await browser.close();
+    }
+  }
+
+  private async parseXmlContent(text: string, url: string): Promise<string[]> {
+    const xmlParser = new XMLParser({
+      ignoreAttributes: false,
+    });
+
+    let parsed;
+
+    try {
+      parsed = xmlParser.parse(text);
+      console.log(333, parsed);
+    } catch {
+      throw new Error(`Invalid XML sitemap at ${url}`);
+    }
+
+    // XML index
+    if (parsed.sitemapindex?.sitemap) {
+      const list = Array.isArray(parsed.sitemapindex.sitemap)
+        ? parsed.sitemapindex.sitemap
+        : [parsed.sitemapindex.sitemap];
+
+      const result: string[] = [];
+
+      for (const sm of list) {
+        result.push(...(await this.parseSitemap(sm.loc)));
+      }
+
+      return result;
+    }
+
+    // XML urlset
+    if (parsed.urlset?.url) {
+      const urls = Array.isArray(parsed.urlset.url)
+        ? parsed.urlset.url
+        : [parsed.urlset.url];
+
+      return urls.map((u) => u.loc).filter(Boolean);
+    }
+
+    throw new Error(`Unknown XML format at ${url}`);
   }
 }

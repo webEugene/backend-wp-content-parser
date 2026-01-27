@@ -17,9 +17,9 @@ export class UrlsService {
 
   async sitemapListParse(websiteUrl: UrlDto) {
     const validatedUrl = await validateUrl(websiteUrl.url);
+    console.log(validatedUrl);
     const correctSitemapUrl =
       await this.sitemapService.getValidSitemapUrl(validatedUrl);
-
     if (correctSitemapUrl === null) return [];
 
     const sitemap = new Sitemapper({
@@ -80,13 +80,17 @@ export class UrlsService {
     const validUrl = await validateUrl(websiteUrl.url);
     const correctSitemapUrl =
       await this.sitemapService.getValidSitemapUrl(validUrl);
-
     if (correctSitemapUrl.length === 0) return [];
 
+    const rr = await this.parserService.parseSitemap(correctSitemapUrl[0]);
+
+    console.log(rr);
     const fetchPromises = correctSitemapUrl.map(
       async (url: string): Promise<string[]> => {
-        const sitemap = new Sitemapper({ url, timeout: 15000 });
-
+        const sitemap = new Sitemapper({
+          url,
+          timeout: 15000,
+        });
         const res = await sitemap.fetch();
         return res.sites;
       },
