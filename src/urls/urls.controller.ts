@@ -17,6 +17,26 @@ type WPCheckResponseType = {
   data: {
     isWp: boolean;
     url: string;
+    framework?: string;
+  };
+  statusCode: number;
+  error: string | null;
+};
+
+type ClientWPCheckResponseType = {
+  data: {
+    isWp: boolean;
+    url: string;
+    framework?: string;
+    code?: string;
+    message?: string;
+    blockDetection?: {
+      isBlocked: boolean;
+      blockerType?: string | null;
+      indicators?: string[];
+      severity?: 'none' | 'low' | 'medium' | 'high';
+      recommendation?: string;
+    };
   };
   statusCode: number;
   error: string | null;
@@ -79,6 +99,44 @@ export class UrlsController {
         data: {
           isWp: false,
           url: urlHostDto.url,
+        },
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: err.message || 'Unexpected error occurred during detection',
+      };
+    }
+  }
+
+  @Post('/client-wp-check')
+  async clientWPCheck(
+    @Body() urlDto: UrlDto,
+  ): Promise<ClientWPCheckResponseType> {
+    try {
+      const { url } = urlDto;
+      const validatedUrl = await validateUrl(url);
+      const result =
+        await this.wpDetectService.checkWebsiteDetail(validatedUrl);
+
+      if (result?.code && result?.code === 'ENOTFOUND') {
+        return {
+          data: {
+            isWp: false,
+            url: result.url,
+          },
+          statusCode: HttpStatus.NOT_FOUND,
+          error: `Website ${result.url} not found / url is incorrect`,
+        };
+      }
+
+      return {
+        data: result,
+        statusCode: HttpStatus.OK,
+        error: null,
+      };
+    } catch (err) {
+      return {
+        data: {
+          isWp: false,
+          url: urlDto.url,
         },
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         error: err.message || 'Unexpected error occurred during detection',

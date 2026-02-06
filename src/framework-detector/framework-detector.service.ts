@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 @Injectable()
 export class FrameworkDetectorService {
-  async detect(url: string) {
-    const html = await this.fetchHTML(url);
+  async detect(html: string) {
     const $ = cheerio.load(html);
     const scripts = this.extractScripts($);
 
@@ -17,7 +15,7 @@ export class FrameworkDetectorService {
       scripts.some((s) => s.includes('/_next/'))
     ) {
       detections.push({
-        framework: 'Next.js',
+        framework: 'next',
         confidence: 1.0,
         signature: '__NEXT_DATA__',
       });
@@ -26,7 +24,7 @@ export class FrameworkDetectorService {
     // ---------- Nuxt.js ----------
     if ($('#__nuxt').length > 0 || scripts.some((s) => s.includes('/_nuxt/'))) {
       detections.push({
-        framework: 'Nuxt.js',
+        framework: 'nuxt',
         confidence: 1.0,
         signature: '#__nuxt or /_nuxt/',
       });
@@ -38,7 +36,7 @@ export class FrameworkDetectorService {
       html.includes('data-reactroot')
     ) {
       detections.push({
-        framework: 'React',
+        framework: 'react',
         confidence: 0.9,
         signature: 'data-reactroot',
       });
@@ -47,7 +45,7 @@ export class FrameworkDetectorService {
     // ---------- Vue ----------
     if (html.includes('data-v-app') || html.includes('data-server-rendered')) {
       detections.push({
-        framework: 'Vue',
+        framework: 'vue',
         confidence: 0.9,
         signature: 'data-v-app',
       });
@@ -63,7 +61,7 @@ export class FrameworkDetectorService {
       )
     ) {
       detections.push({
-        framework: 'Angular',
+        framework: 'angular',
         confidence: 0.8,
         signature: 'ng-version',
       });
@@ -75,27 +73,18 @@ export class FrameworkDetectorService {
       scripts.some((s) => s.includes('/_app/'))
     ) {
       detections.push({
-        framework: 'Svelte/SvelteKit',
+        framework: 'svelte',
         confidence: 0.8,
         signature: 'data-sveltekit',
       });
     }
 
     if (detections.length === 0) {
-      return { framework: 'Unknown', confidence: 0, signatures: [] };
+      return { framework: 'unknown', confidence: 0, signatures: [] };
     }
 
     // Return best match
     return detections.sort((a, b) => b.confidence - a.confidence)[0];
-  }
-
-  private async fetchHTML(url: string): Promise<string> {
-    const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (FrameworkDetectorBot)',
-      },
-    });
-    return data;
   }
 
   private extractScripts($: cheerio.CheerioAPI): string[] {
