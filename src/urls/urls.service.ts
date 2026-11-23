@@ -6,6 +6,7 @@ import { cleanHostname, validateUrl } from '../helpers';
 import { ParserService } from '../parser/parser.service';
 import { AwsService } from '../aws/aws.service';
 import { SitemapService } from '../sitemap/sitemap.service';
+import { SitemapListResult } from '../common/types/sitemap.types';
 
 @Injectable()
 export class UrlsService {
@@ -63,7 +64,7 @@ export class UrlsService {
     }
   }
 
-  async checkWebsiteHasSitemapUrl(websiteUrl: UrlDto): Promise<string[]> {
+  async checkWebsiteHasSitemapUrlFree(websiteUrl: UrlDto): Promise<string[]> {
     try {
       const validUrl = await validateUrl(websiteUrl.url);
 
@@ -141,5 +142,14 @@ export class UrlsService {
     } catch (error) {
       return error;
     }
+  }
+
+  // PRO
+  async getWebsiteSitemapList(websiteUrl: UrlDto): Promise<SitemapListResult> {
+    // Без try/catch: помилка має дійти до Nest, а не повернутись як результат —
+    // інакше контролер звертається до result.sitemapList і падає з TypeError.
+    const validUrl = await validateUrl(websiteUrl.url);
+
+    return this.sitemapService.getValidSitemapUrlWithDetails(validUrl);
   }
 }

@@ -1,18 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 
 export class AuthRegisterDto {
-  @IsString({ message: 'Should be string' })
-  @Length(2, 20, { message: 'Username should be between 2-20 characters' })
-  @IsNotEmpty()
-  readonly username: string;
-
-  @IsEmail(undefined, { each: true, message: 'Email is incorrect' })
+  @IsNotEmpty({ message: 'email is required' })
+  @IsEmail({}, { message: 'email is incorrect' })
   readonly email: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'password is required' })
+  @MinLength(6, { message: 'password must be at least 6 characters' })
   readonly password: string;
-  //
-  // @IsUUID()
-  // @IsNotEmpty()
-  // readonly plan_id: string;
 }
