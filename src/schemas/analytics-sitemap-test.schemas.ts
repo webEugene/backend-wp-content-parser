@@ -15,6 +15,5 @@ export class AnalyticsSitemapTest {
   status: boolean;
 }
 
-export const AnalyticsSitemapTestSchema = SchemaFactory.createForClass(
-  AnalyticsSitemapTest,
-);
+export const AnalyticsSitemapTestSchema =
+  SchemaFactory.createForClass(AnalyticsSitemapTest);

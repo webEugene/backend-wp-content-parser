@@ -7,12 +7,10 @@ import { UrlsModule } from './urls/urls.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ParserModule } from './parser/parser.module';
-import { AnalyticsModule } from './static-analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
+import { UsersModule } from './users/users.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RolesGuard } from './auth/roles.guard';
-import { AnalyticsController } from './static-analytics/analytics.controller';
 import { ReportController } from './report/report.controller';
 import { ReportModule } from './report/report.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -23,6 +21,10 @@ import { WinstonModule } from 'nest-winston';
 import { AwsModule } from './aws/aws.module';
 import { SitemapModule } from './sitemap/sitemap.module';
 import { FrameworkDetectorModule } from './framework-detector/framework-detector.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AnalyzerController } from './analyzer/analyzer.controller';
+import { AnalyzerService } from './analyzer/analyzer.service';
+import { AnalyzerModule } from './analyzer/analyzer.module';
 
 @Module({
   imports: [
@@ -50,7 +52,7 @@ import { FrameworkDetectorModule } from './framework-detector/framework-detector
     ParserModule,
     AnalyticsModule,
     AuthModule,
-    UserModule,
+    UsersModule,
     ReportModule,
     AwsModule,
     ServeStaticModule.forRoot({
@@ -65,8 +67,9 @@ import { FrameworkDetectorModule } from './framework-detector/framework-detector
     AwsModule,
     SitemapModule,
     FrameworkDetectorModule,
+    AnalyzerModule,
   ],
-  controllers: [UrlsController, AnalyticsController, ReportController],
+  controllers: [UrlsController, ReportController, AnalyzerController],
   providers: [
     {
       provide: APP_GUARD,
@@ -84,6 +87,7 @@ import { FrameworkDetectorModule } from './framework-detector/framework-detector
       provide: APP_INTERCEPTOR,
       useClass: Logger,
     },
+    AnalyzerService,
   ],
 })
 export class AppModule {}
