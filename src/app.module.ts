@@ -16,7 +16,6 @@ import { ReportModule } from './report/report.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { SecurityLoggingInterceptor } from './core/interceptors/security-logging.interceptor';
-import { Logger } from 'winston';
 import { WinstonModule } from 'nest-winston';
 import { AwsModule } from './aws/aws.module';
 import { SitemapModule } from './sitemap/sitemap.module';
@@ -82,10 +81,6 @@ import { AnalyzerModule } from './analyzer/analyzer.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: SecurityLoggingInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: Logger,
     },
     AnalyzerService,
   ],
