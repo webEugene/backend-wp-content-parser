@@ -12,13 +12,7 @@ export interface OverviewResult {
  * відомі префікси.
  */
 export type EmailCategory =
-  | 'info'
-  | 'support'
-  | 'sales'
-  | 'hr'
-  | 'press'
-  | 'billing'
-  | 'other';
+  'info' | 'support' | 'sales' | 'hr' | 'press' | 'billing' | 'other';
 
 export interface EmailGroup {
   category: EmailCategory;

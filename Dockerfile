@@ -4,7 +4,7 @@
 
 # Prepare the image when build
 # also use to minimize the docker image
-FROM node:21-alpine as builder
+FROM node:24-alpine as builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npm run build
 
 
 # Stage 2 — Production
-FROM node:21-alpine
+FROM node:24-alpine
 
 # Copy only production dependencies
 COPY package*.json ./
